@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      const base = "/tennislive-match/";
+      const path = window.location.pathname.replace(base, "");
+      const query = encodeURIComponent("/" + path);
+      window.location.replace(base + "?p=" + query);
+    </script>
+  </head>
+  <body></body>
+</html>
