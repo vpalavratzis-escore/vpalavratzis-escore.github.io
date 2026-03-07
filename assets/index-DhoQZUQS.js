@@ -130,7 +130,7 @@
         <a href="/" data-nav>Home</a>
         <a href="/live" data-nav>Find courts</a>
         <a href="https://escoreboards.eu/matches/">Recent Matches</a>
-        <a href="/#how" data-nav>How it works</a>
+        <a href="/#how" data-nav>How it work</a>
         <a href="/#contact" data-nav>Contact</a>
       </div>
       <a class="cta" href="/live" data-nav>Find a court</a>
