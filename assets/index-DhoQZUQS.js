@@ -11,7 +11,7 @@
           <a href="/" data-nav>Home</a>
           <a href="/live" data-nav>Find courts</a>
           <a href="#how" data-nav>How it work</a>
-          <a href="https://escoreboards.eu/matches/">Match Results</a>
+          <a href="https://voxcourt.com/matches/">Match Results</a>
           <a href="#contact">Contact</a>
         </div>
 
@@ -64,7 +64,7 @@
             <div class="screen">
               <div class="bar">
                 <div class="live"><i></i> LIVE • Court 1</div>
-                <div>api.escoreboards.eu</div>
+                <div>api.voxcourt.com</div>
               </div>
 
               <div class="grid2">
@@ -129,7 +129,7 @@
       <div class="navlinks">
         <a href="/" data-nav>Home</a>
         <a href="/live" data-nav>Find courts</a>
-        <a href="https://escoreboards.eu/matches/">Recent Matches</a>
+        <a href="https://voxcourt.com/matches/">Recent Matches</a>
         <a href="/#how" data-nav>How it work</a>
         <a href="/#contact" data-nav>Contact</a>
       </div>
@@ -221,7 +221,7 @@
       <div class="navlinks">
         <a href="/" data-nav>Home</a>
         <a href="/live" data-nav>Find courts</a>
-        <a href="https://escoreboards.eu/matches/">Recent Matches</a>
+        <a href="https://voxcourt.com/matches/">Recent Matches</a>
       </div>
       <a class="cta" href="/live" data-nav>Change court</a>
     </div>
