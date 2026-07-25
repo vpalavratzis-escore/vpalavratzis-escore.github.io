@@ -120,12 +120,12 @@
         </div>
       </div>
 
-      <div class="footer">© <span id="y"></span> e-Scoreboards.</div>
+      <div class="footer">© <span id="y"></span> VoxCourt.</div>
     </div>
   `;const t=e.querySelector("#y");t&&(t.textContent=String(new Date().getFullYear()))}function F(e,t){const s=document.createElement("option");return s.value=e,s.textContent=t,s}function g(e,t,s){e.innerHTML="",e.appendChild(F("",s));for(const o of t)e.appendChild(F(o.id,o.name));e.disabled=t.length===0}async function ct(){const t=await fetch("/tennislive-match/config/clubs.json",{cache:"no-store"});if(!t.ok)throw new Error(`Failed to load clubs.json: ${t.status}`);return t.json()}function dt(){const e=document.getElementById("app");e.innerHTML="";const t=document.createElement("div");t.className="wrap",t.innerHTML=`
     <!-- ===== NAV (same as Home) ===== -->
     <div class="nav">
-      <div class="brand"><div class="logo"></div><div>e-Scoreboards</div></div>
+      <div class="brand"><div class="logo"></div><div>VoxCourt</div></div>
       <div class="navlinks">
         <a href="/" data-nav>Home</a>
         <a href="/live" data-nav>Find courts</a>
@@ -200,7 +200,7 @@
       </div>
     </div>
 
-    <div class="footer">© <span id="y"></span> e-Scoreboards.</div>
+    <div class="footer">© <span id="y"></span> VoxCourt.</div>
   `,e.appendChild(t);const s=t.querySelector("#y");s&&(s.textContent=String(new Date().getFullYear()));const o=t.querySelector("#selCountry"),n=t.querySelector("#selCity"),a=t.querySelector("#selClub"),r=t.querySelector("#selCourt"),d=t.querySelector("#btnOpen");let l=null;const v=()=>l?.countries?.find(c=>c.id===o.value),h=()=>(v()?.cities||[]).find(c=>c.id===n.value),p=()=>(h()?.clubs||[]).find(c=>c.id===a.value),C=()=>(p()?.courts||[]).find(c=>c.id===r.value);function B(){const c=v();g(n,c?.cities||[],"City"),g(a,[],"Club"),g(r,[],"Court"),d.disabled=!0}function L(){const c=h();g(a,c?.clubs||[],"Club"),g(r,[],"Court"),d.disabled=!0}function k(){const c=p();g(r,c?.courts||[],"Court"),d.disabled=!0}function f(){const c=v(),b=h(),m=p(),x=C();d.disabled=!(c&&b&&m&&x)}o.addEventListener("change",()=>{B(),f()}),n.addEventListener("change",()=>{L(),f()}),a.addEventListener("change",()=>{k(),f()}),r.addEventListener("change",()=>f()),d.addEventListener("click",()=>{const c=v(),b=h(),m=p(),x=C();if(!(c&&b&&m&&x))return;const T=`/${c.id}/${b.id}/${m.id}/${x.id}`;window.location.href=`/tennislive-match/?p=${encodeURIComponent(T)}`}),(async()=>{try{l=await ct(),g(o,l.countries||[],"Country")}catch(c){t.innerHTML=`
         <div class="wrap">
           <div class="panel section">
@@ -216,7 +216,7 @@
     <div class="nav">
       <div class="brand">
         <div class="logo"></div>
-        <div>e-Scoreboards</div>
+        <div>VoxCourt</div>
       </div>
       <div class="navlinks">
         <a href="/" data-nav>Home</a>
@@ -425,6 +425,6 @@
 
     </div>
 
-    <div class="footer">© <span id="y"></span> e-Scoreboards.</div>
+    <div class="footer">© <span id="y"></span> VoxCourt.</div>
   </div>
 `,t.querySelector("#y").textContent=String(new Date().getFullYear());const v=t.querySelector("#miTitle"),h=t.querySelector("#miLine2"),p=t.querySelector("#status"),C=t.querySelector("#photostatus"),B=t.querySelector("#camVideo"),L=t.querySelector("#nameA"),k=t.querySelector("#nameB"),f=t.querySelector("#pointA"),c=t.querySelector("#pointB"),b=t.querySelector("#gamesA"),m=t.querySelector("#gamesB"),x=t.querySelector("#setsA"),T=t.querySelector("#setsB"),q=t.querySelector("#photoA"),$=t.querySelector("#photoB"),H=t.querySelector("#photoAph"),D=t.querySelector("#photoBph"),z=t.querySelector("#photoATitle"),Y=t.querySelector("#photoBTitle"),J=t.querySelector("#serveAIcon"),Q=t.querySelector("#serveBIcon");try{const w=await pt();if(!w||!Array.isArray(w.countries))throw new Error("Invalid clubs.json: expected { countries: [...] }");const I=w.countries.find(i=>i.id===a);if(!I)throw new Error(`Country not found: ${a}`);const O=(I.cities||[]).find(i=>i.id===r);if(!O)throw new Error(`City not found: ${r}`);const P=(O.clubs||[]).find(i=>i.id===d);if(!P)throw new Error(`Club not found: ${d}`);const u=(P.courts||[]).find(i=>i.id===l);if(!u)throw new Error(`Court not found: ${l}`);const S=V(u.state||""),X=typeof u.stream=="string"?u.stream:u.stream&&typeof u.stream=="object"?u.stream.url:"",Z=V(X||""),tt=String(u.photosCourt||l||"court-1").trim()||"court-1",et=K(S)?new URL(S).origin:window.location.origin;if(v.textContent=`🎾 ${P.name} – ${u.name}`,h.textContent=`📍 ${O.name}, ${I.name}  •  🔴 LIVE`,p.textContent="VIDEO DEBUG: calling attach...",ut(B,Z),setTimeout(()=>{const i=document.querySelector("video"),y=!!(i&&i._hls);p.textContent="VIDEO DEBUG: attached="+y+" readyState="+(i?i.readyState:-1)},1500),!S){p.textContent="No state URL configured for this court.";return}async function M(){try{const i=await N(S),y=i.nameA??i.playerA?.name??"Player A",W=i.nameB??i.playerB?.name??"Player B",it=i.pointA??i.playerA?.points??i.playerA?.point??i.playerA?.score??"—",st=i.pointB??i.playerB?.points??i.playerB?.point??i.playerB?.score??"—",at=i.gamesA??i.playerA?.games??"—",nt=i.gamesB??i.playerB?.games??"—",ot=i.setsA??i.playerA?.sets??"—",rt=i.setsB??i.playerB?.sets??"—",U=String(i.server||"").toUpperCase();J.style.display=U==="A"?"":"none",Q.style.display=U==="B"?"":"none",L.textContent=E(y,34),k.textContent=E(W,34),f.textContent=String(it),c.textContent=String(st),b.textContent=String(at),m.textContent=String(nt),x.textContent=String(ot),T.textContent=String(rt),z.textContent=E(y,30),Y.textContent=E(W,30),p.textContent=`LIVE ✓ Updated: ${new Date().toLocaleTimeString()}`}catch(i){p.textContent=`Waiting… (${i.message})`}}async function j(){try{const i=`${et}/api/photos?court=${encodeURIComponent(tt)}`,y=await N(i);A(q,H,y.playerA||""),A($,D,y.playerB||""),C.textContent=`PHOTOS ✓ Updated: ${new Date().toLocaleTimeString()}`}catch(i){C.textContent=`PHOTOS / Waiting… (${i.message})`,A(q,H,""),A($,D,"")}}M(),j(),setInterval(M,1e3),setInterval(j,2e3)}catch(w){v.textContent="Config load error",h.textContent=String(w.message||w),p.textContent="Fix config and refresh."}}const G=document.getElementById("app");G?G.innerHTML='<div style="padding:16px;font-family:Inter,system-ui,sans-serif">Loading…</div>':console.error("Missing #app");function R(){const e="/tennislive-match/",t=new URL(window.location.href),s=t.searchParams.get("p");if(s){const n=decodeURIComponent(s);return vt(n)}let o=t.pathname;return o.startsWith(e)&&(o=o.slice(e.length-1)),o=o.replace(/\/+$/,"")||"/",o==="/"?_():o==="/live"?dt():_()}function ht(e){const t=e.target.closest("a");if(!t)return;const s=t.getAttribute("href");!s||s.startsWith("http")||s.startsWith("mailto:")||s.startsWith("tel:")||t.target==="_blank"||s.startsWith("/")&&(e.preventDefault(),history.pushState({},"","/tennislive-match/".replace(/\/+$/,"")+s),R())}window.addEventListener("popstate",R);document.addEventListener("click",ht);R();
