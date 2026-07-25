@@ -4,7 +4,7 @@
       <div class="nav">
         <div class="brand">
           <div class="logo"></div>
-          <div>e-Scoreboards</div>
+          <div>VoxCourt</div>
         </div>
 
         <div class="navlinks">
