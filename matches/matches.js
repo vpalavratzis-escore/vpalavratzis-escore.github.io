@@ -1,0 +1,769 @@
+"use strict";
+
+const API_URL =
+  "https://api.voxcourt.com/api/matches/history?limit=1000&status=COMPLETED";
+
+let allMatches = [];
+
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
+
+function asString(value) {
+  return value == null
+    ? ""
+    : String(value);
+}
+
+
+function parseCourtId(courtId) {
+  const parts =
+    asString(courtId)
+      .split("/")
+      .filter(Boolean);
+
+  return {
+    country: parts[0] || "",
+    region: parts[1] || "",
+    club: parts[2] || "",
+    court: parts[3] || ""
+  };
+}
+
+
+function prettyLabel(value) {
+  return asString(value)
+    .replace(/-/g, " ")
+    .replace(
+      /\b\w/g,
+      character =>
+        character.toUpperCase()
+    );
+}
+
+
+function getMatchDate(match) {
+  const raw =
+    Number(
+      match.endedAt ||
+      match.archivedAt ||
+      0
+    );
+
+  return raw
+    ? new Date(raw)
+    : null;
+}
+
+
+function formatDate(match) {
+  const date =
+    getMatchDate(match);
+
+  if (!date) {
+    return "Date unavailable";
+  }
+
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  ).format(date);
+}
+
+
+function matchDateKey(match) {
+  const date =
+    getMatchDate(match);
+
+  if (!date) {
+    return "";
+  }
+
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+
+function setText(element, value) {
+  element.textContent =
+    asString(value);
+}
+
+
+function makeOption(
+  value,
+  label
+) {
+  const option =
+    document.createElement(
+      "option"
+    );
+
+  option.value =
+    value;
+
+  option.textContent =
+    label;
+
+  return option;
+}
+
+
+function refillSelect(
+  element,
+  values,
+  placeholder
+) {
+  const current =
+    element.value;
+
+  element.replaceChildren(
+    makeOption(
+      "",
+      placeholder
+    )
+  );
+
+  values.forEach(
+    value => {
+      element.appendChild(
+        makeOption(
+          value,
+          prettyLabel(value)
+        )
+      );
+    }
+  );
+
+  element.value =
+    values.includes(current)
+      ? current
+      : "";
+}
+
+
+function renderFilterOptions() {
+  const countries =
+    [
+      ...new Set(
+        allMatches
+          .map(
+            match =>
+              parseCourtId(
+                match.courtId
+              ).country
+          )
+          .filter(Boolean)
+      )
+    ].sort();
+
+  const clubs =
+    [
+      ...new Set(
+        allMatches
+          .map(
+            match =>
+              parseCourtId(
+                match.courtId
+              ).club
+          )
+          .filter(Boolean)
+      )
+    ].sort();
+
+  const courts =
+    [
+      ...new Set(
+        allMatches
+          .map(
+            match =>
+              parseCourtId(
+                match.courtId
+              ).court
+          )
+          .filter(Boolean)
+      )
+    ].sort();
+
+  refillSelect(
+    byId("countryFilter"),
+    countries,
+    "All countries"
+  );
+
+  refillSelect(
+    byId("clubFilter"),
+    clubs,
+    "All clubs"
+  );
+
+  refillSelect(
+    byId("courtFilter"),
+    courts,
+    "All courts"
+  );
+}
+
+
+function getFilteredMatches() {
+  const country =
+    byId("countryFilter").value;
+
+  const club =
+    byId("clubFilter").value;
+
+  const court =
+    byId("courtFilter").value;
+
+  const playerQuery =
+    byId("playerFilter")
+      .value
+      .trim()
+      .toLocaleLowerCase();
+
+  const date =
+    byId("dateFilter").value;
+
+  return allMatches.filter(
+    match => {
+      const location =
+        parseCourtId(
+          match.courtId
+        );
+
+      if (
+        country &&
+        location.country !== country
+      ) {
+        return false;
+      }
+
+      if (
+        club &&
+        location.club !== club
+      ) {
+        return false;
+      }
+
+      if (
+        court &&
+        location.court !== court
+      ) {
+        return false;
+      }
+
+      if (
+        date &&
+        matchDateKey(match) !== date
+      ) {
+        return false;
+      }
+
+      if (playerQuery) {
+        const haystack =
+          [
+            match.nameA,
+            match.nameB
+          ]
+            .map(asString)
+            .join(" ")
+            .toLocaleLowerCase();
+
+        if (
+          !haystack.includes(
+            playerQuery
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+  );
+}
+
+
+function makePlayerRow(
+  name,
+  score,
+  isWinner
+) {
+  const row =
+    document.createElement(
+      "div"
+    );
+
+  row.className =
+    isWinner
+      ? "player-row winner"
+      : "player-row";
+
+  const playerName =
+    document.createElement(
+      "div"
+    );
+
+  playerName.className =
+    "player-name";
+
+  if (isWinner) {
+    const dot =
+      document.createElement(
+        "span"
+      );
+
+    dot.className =
+      "winner-dot";
+
+    playerName.appendChild(
+      dot
+    );
+  }
+
+  playerName.appendChild(
+    document.createTextNode(
+      name || "Player"
+    )
+  );
+
+  const playerScore =
+    document.createElement(
+      "div"
+    );
+
+  playerScore.className =
+    "player-score";
+
+  setText(
+    playerScore,
+    score ?? "—"
+  );
+
+  row.append(
+    playerName,
+    playerScore
+  );
+
+  return row;
+}
+
+
+function makeMatchCard(match) {
+  const article =
+    document.createElement(
+      "article"
+    );
+
+  article.className =
+    "match-card";
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+  link.className =
+    "match-card-link";
+
+  link.href =
+    "/matches/match.html?id=" +
+    encodeURIComponent(
+      asString(match.matchId)
+    );
+
+  const top =
+    document.createElement(
+      "div"
+    );
+
+  top.className =
+    "match-card-top";
+
+  const date =
+    document.createElement(
+      "div"
+    );
+
+  date.className =
+    "match-date";
+
+  setText(
+    date,
+    formatDate(match)
+  );
+
+  const location =
+    parseCourtId(
+      match.courtId
+    );
+
+  const locationBox =
+    document.createElement(
+      "div"
+    );
+
+  locationBox.className =
+    "match-location";
+
+  const locationText =
+    document.createElement(
+      "span"
+    );
+
+  const club =
+    prettyLabel(
+      location.club
+    );
+
+  const court =
+    prettyLabel(
+      location.court
+    );
+
+  setText(
+    locationText,
+    [club, court]
+      .filter(Boolean)
+      .join(" · ") ||
+      "VoxCourt"
+  );
+
+  locationBox.appendChild(
+    locationText
+  );
+
+  top.append(
+    date,
+    locationBox
+  );
+
+
+  const scoreboard =
+    document.createElement(
+      "div"
+    );
+
+  scoreboard.className =
+    "match-scoreboard";
+
+  scoreboard.append(
+    makePlayerRow(
+      match.nameA,
+      match.setsA,
+      match.winner === "A"
+    ),
+    makePlayerRow(
+      match.nameB,
+      match.setsB,
+      match.winner === "B"
+    )
+  );
+
+
+  const divider =
+    document.createElement(
+      "div"
+    );
+
+  divider.className =
+    "match-divider";
+
+
+  const bottom =
+    document.createElement(
+      "div"
+    );
+
+  bottom.className =
+    "match-card-bottom";
+
+  const status =
+    document.createElement(
+      "div"
+    );
+
+  status.className =
+    "final-status";
+
+  setText(
+    status,
+    "Final"
+  );
+
+  const view =
+    document.createElement(
+      "div"
+    );
+
+  view.className =
+    "view-match";
+
+  setText(
+    view,
+    "View match →"
+  );
+
+  bottom.append(
+    status,
+    view
+  );
+
+  link.append(
+    top,
+    scoreboard,
+    divider,
+    bottom
+  );
+
+  article.appendChild(
+    link
+  );
+
+  return article;
+}
+
+
+function renderMatches() {
+  const grid =
+    byId("matchesGrid");
+
+  const matches =
+    getFilteredMatches();
+
+  grid.replaceChildren();
+
+  setText(
+    byId("resultCount"),
+    matches.length
+  );
+
+  setText(
+    byId("resultLabel"),
+    matches.length === 1
+      ? "match"
+      : "matches"
+  );
+
+  if (!matches.length) {
+    const message =
+      document.createElement(
+        "div"
+      );
+
+    message.className =
+      "archive-message";
+
+    const strong =
+      document.createElement(
+        "strong"
+      );
+
+    setText(
+      strong,
+      allMatches.length
+        ? "No matches match these filters"
+        : "No completed matches yet"
+    );
+
+    const text =
+      document.createElement(
+        "span"
+      );
+
+    setText(
+      text,
+      allMatches.length
+        ? "Try changing or clearing the filters."
+        : "Completed matches will appear here automatically."
+    );
+
+    message.append(
+      strong,
+      text
+    );
+
+    grid.appendChild(
+      message
+    );
+
+    return;
+  }
+
+  matches.forEach(
+    match => {
+      grid.appendChild(
+        makeMatchCard(match)
+      );
+    }
+  );
+}
+
+
+function applyFilters() {
+  renderMatches();
+}
+
+
+function clearFilters() {
+  byId("countryFilter").value = "";
+  byId("clubFilter").value = "";
+  byId("courtFilter").value = "";
+  byId("playerFilter").value = "";
+  byId("dateFilter").value = "";
+
+  renderMatches();
+}
+
+
+async function loadMatches() {
+  const grid =
+    byId("matchesGrid");
+
+  grid.innerHTML =
+    '<div class="archive-message">Loading matches…</div>';
+
+  byId("refreshMatches").disabled =
+    true;
+
+  try {
+    const response =
+      await fetch(
+        API_URL,
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    allMatches =
+      Array.isArray(data.items)
+        ? data.items
+        : [];
+
+    allMatches.sort(
+      (a, b) =>
+        Number(
+          b.endedAt ||
+          b.archivedAt ||
+          0
+        ) -
+        Number(
+          a.endedAt ||
+          a.archivedAt ||
+          0
+        )
+    );
+
+    setText(
+      byId("archiveCount"),
+      allMatches.length
+    );
+
+    setText(
+      byId("archiveStatus"),
+      allMatches.length
+        ? "Completed VoxCourt matches"
+        : "Archive ready"
+    );
+
+    renderFilterOptions();
+    renderMatches();
+
+  } catch (error) {
+    console.error(
+      "Failed to load match archive:",
+      error
+    );
+
+    setText(
+      byId("archiveCount"),
+      "—"
+    );
+
+    setText(
+      byId("archiveStatus"),
+      "Archive unavailable"
+    );
+
+    grid.innerHTML =
+      '<div class="archive-message"><strong>Could not load the archive</strong><span>Please try again.</span></div>';
+
+  } finally {
+    byId("refreshMatches").disabled =
+      false;
+  }
+}
+
+
+[
+  "countryFilter",
+  "clubFilter",
+  "courtFilter",
+  "dateFilter"
+].forEach(
+  id => {
+    byId(id).addEventListener(
+      "change",
+      applyFilters
+    );
+  }
+);
+
+
+byId("playerFilter")
+  .addEventListener(
+    "input",
+    applyFilters
+  );
+
+
+byId("clearFilters")
+  .addEventListener(
+    "click",
+    clearFilters
+  );
+
+
+byId("refreshMatches")
+  .addEventListener(
+    "click",
+    loadMatches
+  );
+
+
+setText(
+  byId("year"),
+  new Date().getFullYear()
+);
+
+
+loadMatches();
