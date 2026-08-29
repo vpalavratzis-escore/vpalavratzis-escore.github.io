@@ -978,3 +978,474 @@ setText(
 
 activateTabs();
 loadMatch();
+
+/* ===== VC MATCH DETAIL ENHANCEMENTS START ===== */
+(function () {
+  if (document.body?.dataset?.page !== "match") return;
+
+  const DEFAULT_A =
+    "/tennislive-match/players/default-a.jpg";
+
+  const DEFAULT_B =
+    "/tennislive-match/players/default-b.jpg";
+
+  function textOf(el) {
+    return (el?.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isVisible(el) {
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function unique(list) {
+    return Array.from(new Set(list));
+  }
+
+  function looksLikeName(txt) {
+    if (!txt) return false;
+
+    const t = txt.trim();
+
+    if (t.length < 3 || t.length > 40) {
+      return false;
+    }
+
+    if (/^\d+$/.test(t)) {
+      return false;
+    }
+
+    if (
+      /^(FINAL|OVERVIEW|HIGHLIGHTS|TIMELINE|MATCH ARCHIVE|RESULT|WINNER|FORMAT|DURATION|STARTED|FINISHED|CLUB|COURT)$/i.test(
+        t
+      )
+    ) {
+      return false;
+    }
+
+    return /[A-Za-zΑ-ΩΆ-Ώα-ωά-ώ]/.test(t);
+  }
+
+  function getBigScoreCards() {
+    const all =
+      Array.from(
+        document.querySelectorAll("main *")
+      );
+
+    const scoreEls = all.filter((el) => {
+      const t = textOf(el);
+
+      if (!/^\d{1,2}$/.test(t)) {
+        return false;
+      }
+
+      const fs =
+        parseFloat(
+          getComputedStyle(el).fontSize || "0"
+        ) || 0;
+
+      return fs >= 34 || el.offsetHeight >= 40;
+    });
+
+    const cards = [];
+    const seen = new Set();
+
+    scoreEls.forEach((scoreEl) => {
+      let cur = scoreEl;
+
+      while (
+        cur &&
+        cur !== document.body
+      ) {
+        if (
+          cur.offsetWidth >= 220 &&
+          cur.offsetHeight >= 110
+        ) {
+          const r =
+            cur.getBoundingClientRect();
+
+          const key = [
+            Math.round(r.top),
+            Math.round(r.left),
+            Math.round(r.width),
+            Math.round(r.height),
+          ].join("|");
+
+          if (!seen.has(key)) {
+            seen.add(key);
+            cards.push(cur);
+          }
+
+          break;
+        }
+
+        cur = cur.parentElement;
+      }
+    });
+
+    return unique(cards)
+      .filter(isVisible)
+      .sort((a, b) => {
+        const ar =
+          a.getBoundingClientRect();
+        const br =
+          b.getBoundingClientRect();
+
+        return (
+          ar.top - br.top ||
+          ar.left - br.left
+        );
+      })
+      .slice(0, 2);
+  }
+
+  function findNameEl(card) {
+    const nodes = [
+      card,
+      ...card.querySelectorAll("*"),
+    ];
+
+    const candidates = nodes.filter((el) => {
+      const t = textOf(el);
+      return (
+        looksLikeName(t) &&
+        isVisible(el)
+      );
+    });
+
+    candidates.sort((a, b) => {
+      const af =
+        parseFloat(
+          getComputedStyle(a).fontSize || "0"
+        ) || 0;
+
+      const bf =
+        parseFloat(
+          getComputedStyle(b).fontSize || "0"
+        ) || 0;
+
+      return bf - af;
+    });
+
+    return candidates[0] || null;
+  }
+
+  function decorateScoreCards() {
+    const cards =
+      getBigScoreCards();
+
+    cards.forEach((card, idx) => {
+      if (
+        card.dataset.vcPhotoEnhanced ===
+        "1"
+      ) {
+        return;
+      }
+
+      const photoWrap =
+        document.createElement("div");
+
+      photoWrap.className =
+        "vc-detail-player-photo-wrap";
+
+      const img =
+        document.createElement("img");
+
+      img.className =
+        "vc-detail-player-photo";
+
+      img.alt =
+        idx === 0
+          ? "Player A"
+          : "Player B";
+
+      img.src =
+        idx === 0
+          ? DEFAULT_A
+          : DEFAULT_B;
+
+      img.onerror = () => {
+        img.onerror = null;
+        img.src =
+          idx === 0
+            ? DEFAULT_A
+            : DEFAULT_B;
+      };
+
+      photoWrap.appendChild(img);
+
+      card.classList.add(
+        "vc-detail-player-card"
+      );
+
+      card.prepend(photoWrap);
+
+      const nameEl =
+        findNameEl(card);
+
+      if (nameEl) {
+        nameEl.classList.add(
+          "vc-detail-player-name"
+        );
+      }
+
+      card.dataset.vcPhotoEnhanced =
+        "1";
+    });
+  }
+
+  function findTimelineRows() {
+    const nodes = Array.from(
+      document.querySelectorAll("main *")
+    );
+
+    const candidates = [];
+
+    nodes.forEach((el) => {
+      const t = textOf(el);
+
+      if (
+        !/\b(POINT|GAME|SET)\b/i.test(t)
+      ) {
+        return;
+      }
+
+      if (
+        !/Sets?\s*\d+\s*-\s*\d+/i.test(t)
+      ) {
+        return;
+      }
+
+      let cur = el;
+
+      while (
+        cur &&
+        cur !== document.body
+      ) {
+        if (
+          cur.offsetWidth >= 500 &&
+          cur.offsetHeight >= 42
+        ) {
+          candidates.push(cur);
+          break;
+        }
+
+        cur = cur.parentElement;
+      }
+    });
+
+    const rows = unique(candidates)
+      .filter(isVisible)
+      .sort((a, b) => {
+        const ar =
+          a.getBoundingClientRect();
+        const br =
+          b.getBoundingClientRect();
+
+        return (
+          ar.top - br.top ||
+          ar.left - br.left
+        );
+      });
+
+    return rows.filter(
+      (row, i) =>
+        !rows.some(
+          (other, j) =>
+            i !== j &&
+            other !== row &&
+            other.contains(row)
+        )
+    );
+  }
+
+  function getTimelineContainer(rows) {
+    const counts = new Map();
+
+    rows.forEach((row) => {
+      const parent =
+        row.parentElement;
+      if (!parent) return;
+
+      counts.set(
+        parent,
+        (counts.get(parent) || 0) + 1
+      );
+    });
+
+    let best = null;
+    let bestCount = 0;
+
+    counts.forEach((count, el) => {
+      if (count > bestCount) {
+        best = el;
+        bestCount = count;
+      }
+    });
+
+    return best;
+  }
+
+  function parseSetInfo(text) {
+    const m = text.match(
+      /Sets?\s*(\d+)\s*-\s*(\d+)/i
+    );
+
+    if (!m) return null;
+
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+
+    return {
+      a,
+      b,
+      key: `${a}-${b}`,
+      setNumber: a + b + 1,
+    };
+  }
+
+  function styleTimelineRows() {
+    const rows =
+      findTimelineRows();
+
+    rows.forEach((row) => {
+      row.classList.add(
+        "vc-timeline-row"
+      );
+
+      const t =
+        textOf(row).toUpperCase();
+
+      row.classList.remove(
+        "vc-timeline-row--point",
+        "vc-timeline-row--game",
+        "vc-timeline-row--set",
+        "vc-timeline-row--first-in-set"
+      );
+
+      if (t.includes("POINT")) {
+        row.classList.add(
+          "vc-timeline-row--point"
+        );
+      }
+
+      if (t.includes("GAME")) {
+        row.classList.add(
+          "vc-timeline-row--game"
+        );
+      }
+
+      if (t.includes("SET")) {
+        row.classList.add(
+          "vc-timeline-row--set"
+        );
+      }
+    });
+  }
+
+  function insertSetSeparators() {
+    const rows =
+      findTimelineRows();
+
+    const container =
+      getTimelineContainer(rows);
+
+    if (!container) return;
+
+    container
+      .querySelectorAll(
+        ".vc-timeline-set-separator"
+      )
+      .forEach((el) => el.remove());
+
+    let lastKey = null;
+
+    rows.forEach((row) => {
+      if (!container.contains(row)) {
+        return;
+      }
+
+      const info =
+        parseSetInfo(textOf(row));
+
+      if (!info) return;
+
+      if (info.key !== lastKey) {
+        const sep =
+          document.createElement("div");
+
+        sep.className =
+          "vc-timeline-set-separator";
+
+        sep.innerHTML = `
+          <div class="vc-timeline-set-kicker">SET ${info.setNumber}</div>
+          <div class="vc-timeline-set-title">Set ${info.setNumber} timeline</div>
+          <div class="vc-timeline-set-subtitle">Running sets score: ${info.a}-${info.b}</div>
+        `;
+
+        row.before(sep);
+        row.classList.add(
+          "vc-timeline-row--first-in-set"
+        );
+
+        lastKey = info.key;
+      }
+    });
+  }
+
+  function applyEnhancements() {
+    decorateScoreCards();
+    styleTimelineRows();
+    insertSetSeparators();
+  }
+
+  let timer = null;
+
+  function scheduleEnhancements() {
+    clearTimeout(timer);
+    timer = setTimeout(
+      applyEnhancements,
+      80
+    );
+  }
+
+  window.addEventListener(
+    "load",
+    scheduleEnhancements
+  );
+
+  document.addEventListener(
+    "click",
+    () => {
+      setTimeout(
+        scheduleEnhancements,
+        120
+      );
+    },
+    true
+  );
+
+  const observer =
+    new MutationObserver(() => {
+      scheduleEnhancements();
+    });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  scheduleEnhancements();
+  setTimeout(
+    scheduleEnhancements,
+    400
+  );
+  setTimeout(
+    scheduleEnhancements,
+    1200
+  );
+})();
+/* ===== VC MATCH DETAIL ENHANCEMENTS END ===== */

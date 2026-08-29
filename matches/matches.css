@@ -4225,3 +4225,164 @@ body[data-page="match"] .footer{
 
 
 /* ===== VOXCOURT MATCH DETAIL WHITE END ===== */
+
+/* ===== VC MATCH DETAIL POLISH START ===== */
+
+body[data-page="match"]{
+  --vc-ink:#183149;
+  --vc-ink-soft:#5f7588;
+  --vc-teal:#10b8c0;
+  --vc-teal-soft:#e9f8f9;
+  --vc-line:#d7e5ea;
+  --vc-surface:#ffffff;
+  --vc-surface-soft:#f8fbfc;
+}
+
+/* better tiny headings / labels */
+body[data-page="match"] small,
+body[data-page="match"] [class*="label"],
+body[data-page="match"] [class*="meta"],
+body[data-page="match"] [class*="eyebrow"]{
+  color:var(--vc-ink-soft) !important;
+  opacity:1 !important;
+  font-weight:700 !important;
+  letter-spacing:.06em;
+}
+
+/* tabs */
+body[data-page="match"] button,
+body[data-page="match"] [role="tab"]{
+  font-weight:800;
+}
+
+/* player summary cards */
+body[data-page="match"] .vc-detail-player-card{
+  position:relative;
+  padding-top:22px !important;
+  background:var(--vc-surface) !important;
+}
+
+body[data-page="match"] .vc-detail-player-photo-wrap{
+  width:70px;
+  height:70px;
+  margin:0 auto 10px;
+  border-radius:50%;
+  overflow:hidden;
+  border:3px solid var(--vc-teal);
+  background:#ffffff;
+  box-shadow:0 6px 18px rgba(16,35,58,.14);
+}
+
+body[data-page="match"] .vc-detail-player-photo{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+}
+
+body[data-page="match"] .vc-detail-player-name{
+  color:var(--vc-ink) !important;
+  opacity:1 !important;
+  font-weight:900 !important;
+}
+
+/* timeline container readability */
+body[data-page="match"] .vc-timeline-row{
+  margin-top:12px !important;
+  background:#ffffff !important;
+  border:1px solid var(--vc-line) !important;
+  border-left:4px solid #c7dbe2 !important;
+  border-radius:18px !important;
+  box-shadow:0 6px 18px rgba(14,34,52,.05) !important;
+}
+
+body[data-page="match"] .vc-timeline-row--point{
+  border-left-color:#8ddbe0 !important;
+}
+
+body[data-page="match"] .vc-timeline-row--game{
+  border-left-color:var(--vc-teal) !important;
+}
+
+body[data-page="match"] .vc-timeline-row--set{
+  border-left-color:#efb45b !important;
+}
+
+body[data-page="match"] .vc-timeline-row--first-in-set{
+  margin-top:4px !important;
+}
+
+body[data-page="match"] .vc-timeline-row,
+body[data-page="match"] .vc-timeline-row *{
+  color:var(--vc-ink) !important;
+  opacity:1 !important;
+}
+
+body[data-page="match"] .vc-timeline-row small{
+  color:var(--vc-ink-soft) !important;
+}
+
+/* set separator */
+body[data-page="match"] .vc-timeline-set-separator{
+  margin:26px 0 10px;
+  padding:14px 18px;
+  border:1px solid #cfe9eb;
+  border-radius:18px;
+  background:linear-gradient(135deg,#f4fbfc 0%,#eef9fa 100%);
+  box-shadow:0 4px 14px rgba(16,35,58,.04);
+}
+
+body[data-page="match"] .vc-timeline-set-kicker{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:70px;
+  padding:6px 12px;
+  border-radius:999px;
+  background:#dff6f7;
+  color:#087f87;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+body[data-page="match"] .vc-timeline-set-title{
+  margin-top:8px;
+  color:var(--vc-ink);
+  font-size:18px;
+  font-weight:900;
+  line-height:1.2;
+}
+
+body[data-page="match"] .vc-timeline-set-subtitle{
+  margin-top:4px;
+  color:var(--vc-ink-soft);
+  font-size:13px;
+  font-weight:700;
+}
+
+/* empty states / content cards */
+body[data-page="match"] main > *{
+  color:var(--vc-ink);
+}
+
+body[data-page="match"] .archive-message,
+body[data-page="match"] [class*="empty"]{
+  color:var(--vc-ink-soft) !important;
+  opacity:1 !important;
+}
+
+/* overview cards generic readability */
+body[data-page="match"] main div{
+  text-rendering:optimizeLegibility;
+}
+
+/* footer tiny text */
+body[data-page="match"] footer,
+body[data-page="match"] .footer{
+  color:var(--vc-ink-soft) !important;
+}
+
+/* ===== VC MATCH DETAIL POLISH END ===== */
