@@ -5049,3 +5049,157 @@ body[data-page="match"]
 
 
 /* ===== VC MATCH DETAIL FINAL V4 END ===== */
+
+/* ===== VC ARCHIVE MEDIA V1 START ===== */
+
+
+/* ARCHIVE LIST PLAYER PHOTOS */
+
+body[data-page="archive"]
+.match-scoreboard
+.player-row{
+  display:grid !important;
+
+  grid-template-columns:
+    38px
+    minmax(0,1fr)
+    auto !important;
+
+  align-items:center !important;
+
+  gap:10px !important;
+}
+
+
+body[data-page="archive"]
+.match-card-player-photo{
+  width:38px !important;
+  height:38px !important;
+
+  display:block !important;
+
+  object-fit:cover !important;
+  object-position:center !important;
+
+  border:
+    2px solid #a4dde1 !important;
+
+  border-radius:
+    50% !important;
+
+  background:
+    #ffffff !important;
+
+  box-shadow:
+    0 3px 10px
+    rgba(16,35,58,.10) !important;
+}
+
+
+body[data-page="archive"]
+.player-row.winner
+.match-card-player-photo{
+  border-color:
+    #0ba7b0 !important;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(11,167,176,.08),
+    0 4px 12px
+    rgba(16,35,58,.11) !important;
+}
+
+
+/* ARCHIVED HIGHLIGHT THUMBNAILS */
+
+body[data-page="match"]
+.highlight-preview{
+  position:relative !important;
+
+  min-height:
+    140px !important;
+
+  overflow:
+    hidden !important;
+
+  display:grid !important;
+
+  place-items:
+    center !important;
+
+  background:
+    #dbe9ee !important;
+}
+
+
+body[data-page="match"]
+.highlight-preview-image{
+  position:absolute !important;
+
+  inset:0 !important;
+
+  width:100% !important;
+  height:100% !important;
+
+  display:block !important;
+
+  object-fit:cover !important;
+
+  object-position:center !important;
+}
+
+
+body[data-page="match"]
+.highlight-preview::after{
+  content:"" !important;
+
+  position:absolute !important;
+
+  inset:0 !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(9,25,38,.02),
+      rgba(9,25,38,.24)
+    ) !important;
+
+  pointer-events:none !important;
+}
+
+
+body[data-page="match"]
+.highlight-preview-play{
+  position:relative !important;
+
+  z-index:2 !important;
+
+  width:48px !important;
+  height:48px !important;
+
+  display:grid !important;
+
+  place-items:center !important;
+
+  border:
+    2px solid rgba(255,255,255,.95) !important;
+
+  border-radius:
+    50% !important;
+
+  color:
+    #ffffff !important;
+
+  background:
+    rgba(8,33,50,.72) !important;
+
+  font-size:
+    18px !important;
+
+  box-shadow:
+    0 6px 18px
+    rgba(0,0,0,.24) !important;
+}
+
+
+/* ===== VC ARCHIVE MEDIA V1 END ===== */

@@ -1,5 +1,41 @@
 "use strict";
 
+/* ===== VC ARCHIVE CARD PHOTOS V1 START ===== */
+
+const VC_ARCHIVE_DEFAULT_A =
+  "/tennislive-match/players/default-a.jpg";
+
+const VC_ARCHIVE_DEFAULT_B =
+  "/tennislive-match/players/default-b.jpg";
+
+
+function archivedPlayerPhoto(
+  match,
+  side
+) {
+  const key =
+    side === "B"
+      ? "B"
+      : "A";
+
+  const metadata =
+    match?.metadata || {};
+
+  return (
+    match?.[`photo${key}`] ||
+    match?.[`photoUrl${key}`] ||
+    metadata?.[`photo${key}`] ||
+    metadata?.[`photoUrl${key}`] ||
+    (
+      key === "B"
+        ? VC_ARCHIVE_DEFAULT_B
+        : VC_ARCHIVE_DEFAULT_A
+    )
+  );
+}
+
+/* ===== VC ARCHIVE CARD PHOTOS V1 END ===== */
+
 const API_URL =
   "https://api.voxcourt.com/api/matches/history?limit=1000&status=COMPLETED";
 
@@ -307,7 +343,9 @@ function getFilteredMatches() {
 function makePlayerRow(
   name,
   score,
-  isWinner
+  isWinner,
+  photoUrl,
+  side
 ) {
   const row =
     document.createElement(
@@ -318,6 +356,36 @@ function makePlayerRow(
     isWinner
       ? "player-row winner"
       : "player-row";
+
+
+  const photo =
+    document.createElement(
+      "img"
+    );
+
+  photo.className =
+    "match-card-player-photo";
+
+  photo.alt =
+    name || "Player";
+
+  photo.src =
+    photoUrl ||
+    (
+      side === "B"
+        ? VC_ARCHIVE_DEFAULT_B
+        : VC_ARCHIVE_DEFAULT_A
+    );
+
+  photo.onerror = () => {
+    photo.onerror = null;
+
+    photo.src =
+      side === "B"
+        ? VC_ARCHIVE_DEFAULT_B
+        : VC_ARCHIVE_DEFAULT_A;
+  };
+
 
   const playerName =
     document.createElement(
@@ -347,6 +415,7 @@ function makePlayerRow(
     )
   );
 
+
   const playerScore =
     document.createElement(
       "div"
@@ -360,7 +429,9 @@ function makePlayerRow(
     score ?? "—"
   );
 
+
   row.append(
+    photo,
     playerName,
     playerScore
   );
@@ -471,12 +542,22 @@ function makeMatchCard(match) {
     makePlayerRow(
       match.nameA,
       match.setsA,
-      match.winner === "A"
+      match.winner === "A",
+      archivedPlayerPhoto(
+        match,
+        "A"
+      ),
+      "A"
     ),
     makePlayerRow(
       match.nameB,
       match.setsB,
-      match.winner === "B"
+      match.winner === "B",
+      archivedPlayerPhoto(
+        match,
+        "B"
+      ),
+      "B"
     )
   );
 

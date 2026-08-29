@@ -3,6 +3,10 @@
 const API_BASE =
   "https://api.voxcourt.com/api/matches/history/";
 
+const VC_HISTORY_API_ORIGIN =
+  new URL(API_BASE).origin;
+
+
 
 function byId(id) {
   return document.getElementById(id);
@@ -1090,13 +1094,40 @@ function hasReplay(event) {
   const replay =
     replayInfo(event);
 
+  const type =
+    eventType(event);
+
+  const eventId =
+    asString(
+      event?.eventId
+    ).trim();
+
+  const stored =
+    Boolean(
+      event.clipUrl ||
+      event.replayUrl ||
+      metadataUrl(event) ||
+      replay.url ||
+      replay.clipUrl ||
+      event.clip
+    );
+
+  if (stored) {
+    return true;
+  }
+
+  /*
+   * Archive only decisive highlight videos.
+   * Point events remain fully visible in Timeline,
+   * without creating hundreds of 30-second files.
+   */
   return Boolean(
-    event.clipUrl ||
-    event.replayUrl ||
-    metadataUrl(event) ||
-    replay.url ||
-    replay.clipUrl ||
-    event.clip
+    eventId &&
+    (
+      type === "GAME" ||
+      type === "SET" ||
+      type === "MATCH"
+    )
   );
 }
 
@@ -1117,13 +1148,59 @@ function getReplayUrl(event) {
   const replay =
     replayInfo(event);
 
-  return (
+  const stored =
     event.clipUrl ||
     event.replayUrl ||
     metadataUrl(event) ||
     replay.url ||
     replay.clipUrl ||
-    ""
+    "";
+
+  if (stored) {
+    return stored;
+  }
+
+  const eventId =
+    asString(
+      event?.eventId
+    ).trim();
+
+  if (!eventId) {
+    return "";
+  }
+
+  return (
+    `${VC_HISTORY_API_ORIGIN}/api/events/` +
+    `${encodeURIComponent(eventId)}/replay`
+  );
+}
+
+
+function getThumbnailUrl(event) {
+  const eventId =
+    asString(
+      event?.eventId
+    ).trim();
+
+  const metadata =
+    event?.metadata || {};
+
+  const stored =
+    event?.thumbnailUrl ||
+    metadata?.thumbnailUrl ||
+    "";
+
+  if (stored) {
+    return stored;
+  }
+
+  if (!eventId) {
+    return "";
+  }
+
+  return (
+    `${VC_HISTORY_API_ORIGIN}/api/events/` +
+    `${encodeURIComponent(eventId)}/thumbnail`
   );
 }
 
@@ -1191,9 +1268,48 @@ function renderHighlights(match) {
       preview.className =
         "highlight-preview";
 
+
+      const thumbUrl =
+        getThumbnailUrl(
+          event
+        );
+
+
+      if (thumbUrl) {
+        const image =
+          document.createElement(
+            "img"
+          );
+
+        image.className =
+          "highlight-preview-image";
+
+        image.alt = "";
+        image.loading = "lazy";
+        image.decoding = "async";
+        image.src = thumbUrl;
+
+        preview.appendChild(
+          image
+        );
+      }
+
+
+      const play =
+        document.createElement(
+          "span"
+        );
+
+      play.className =
+        "highlight-preview-play";
+
       setText(
-        preview,
+        play,
         "▶"
+      );
+
+      preview.appendChild(
+        play
       );
 
 
