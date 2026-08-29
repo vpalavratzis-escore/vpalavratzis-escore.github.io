@@ -100,10 +100,207 @@ function setText(element, value) {
 }
 
 
+/* ===== VC MATCH DETAIL DIRECT HELPERS V4 START ===== */
+
+const VC_DEFAULT_PHOTO_A =
+  "/tennislive-match/players/default-a.jpg";
+
+const VC_DEFAULT_PHOTO_B =
+  "/tennislive-match/players/default-b.jpg";
+
+
+function vcFirstValue(...values) {
+  for (const value of values) {
+    const text =
+      asString(value).trim();
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return "";
+}
+
+
+function resolveArchivedPlayerPhoto(
+  match,
+  side
+) {
+  const key =
+    side === "B"
+      ? "B"
+      : "A";
+
+  const fallback =
+    key === "B"
+      ? VC_DEFAULT_PHOTO_B
+      : VC_DEFAULT_PHOTO_A;
+
+  const metadata =
+    match?.metadata || {};
+
+  const players =
+    match?.players ||
+    metadata?.players ||
+    {};
+
+  const player =
+    match?.[`player${key}`] ||
+    metadata?.[`player${key}`] ||
+    players?.[key] ||
+    players?.[key.toLowerCase()] ||
+    {};
+
+  return vcFirstValue(
+    match?.[`photo${key}`],
+    match?.[`photoUrl${key}`],
+    match?.[`playerPhoto${key}`],
+    match?.[`avatar${key}`],
+    match?.[`avatarUrl${key}`],
+
+    metadata?.[`photo${key}`],
+    metadata?.[`photoUrl${key}`],
+    metadata?.[`playerPhoto${key}`],
+    metadata?.[`avatar${key}`],
+    metadata?.[`avatarUrl${key}`],
+
+    player?.photo,
+    player?.photoUrl,
+    player?.avatar,
+    player?.avatarUrl,
+    player?.image,
+    player?.imageUrl,
+
+    fallback
+  );
+}
+
+
+function vcEventSide(event) {
+  const side =
+    asString(
+      event?.metadata?.scoringSide ||
+      event?.scoringSide ||
+      ""
+    )
+      .trim()
+      .toUpperCase();
+
+  return (
+    side === "A" ||
+    side === "B"
+  )
+    ? side
+    : "";
+}
+
+
+function vcHasSetScore(state) {
+  return Boolean(
+    state &&
+    state.setsA != null &&
+    state.setsB != null
+  );
+}
+
+
+function vcSetTotal(state) {
+  if (!vcHasSetScore(state)) {
+    return 0;
+  }
+
+  return (
+    Number(state.setsA || 0) +
+    Number(state.setsB || 0)
+  );
+}
+
+
+function vcSetNumberForEvent(event) {
+  const before =
+    event?.before || null;
+
+  const after =
+    event?.after || null;
+
+  /*
+   * Best source:
+   * the event belongs to whichever set was active
+   * BEFORE the scoring action happened.
+   */
+  if (vcHasSetScore(before)) {
+    return Math.max(
+      1,
+      vcSetTotal(before) + 1
+    );
+  }
+
+  if (vcHasSetScore(after)) {
+    const total =
+      vcSetTotal(after);
+
+    const type =
+      eventType(event);
+
+    /*
+     * A SET event represents the set that just ended.
+     */
+    if (type === "SET") {
+      return Math.max(
+        1,
+        total
+      );
+    }
+
+    /*
+     * Some engines close a set on the GAME event and
+     * immediately reset games to 0-0.
+     */
+    if (
+      type === "GAME" &&
+      Number(after.gamesA || 0) === 0 &&
+      Number(after.gamesB || 0) === 0 &&
+      total > 0
+    ) {
+      return total;
+    }
+
+    return Math.max(
+      1,
+      total + 1
+    );
+  }
+
+  return 1;
+}
+
+
+function vcSetsScoreEnteringEvent(event) {
+  const state =
+    vcHasSetScore(event?.before)
+      ? event.before
+      : event?.after;
+
+  if (!vcHasSetScore(state)) {
+    return "";
+  }
+
+  return (
+    `${Number(state.setsA || 0)}` +
+    "-" +
+    `${Number(state.setsB || 0)}`
+  );
+}
+
+/* ===== VC MATCH DETAIL DIRECT HELPERS V4 END ===== */
+
 function makeDetailPlayer(
   name,
   score,
-  isWinner
+  isWinner,
+  photoUrl,
+  side
 ) {
   const row =
     document.createElement(
@@ -114,6 +311,46 @@ function makeDetailPlayer(
     isWinner
       ? "detail-player winner"
       : "detail-player";
+
+
+  const photo =
+    document.createElement(
+      "div"
+    );
+
+  photo.className =
+    "detail-player-photo";
+
+
+  const image =
+    document.createElement(
+      "img"
+    );
+
+  image.alt =
+    name || "Player";
+
+  image.src =
+    photoUrl ||
+    (
+      side === "B"
+        ? VC_DEFAULT_PHOTO_B
+        : VC_DEFAULT_PHOTO_A
+    );
+
+  image.onerror = () => {
+    image.onerror = null;
+
+    image.src =
+      side === "B"
+        ? VC_DEFAULT_PHOTO_B
+        : VC_DEFAULT_PHOTO_A;
+  };
+
+  photo.appendChild(
+    image
+  );
+
 
   const player =
     document.createElement(
@@ -143,6 +380,7 @@ function makeDetailPlayer(
     )
   );
 
+
   const result =
     document.createElement(
       "div"
@@ -156,7 +394,9 @@ function makeDetailPlayer(
     score ?? "—"
   );
 
+
   row.append(
+    photo,
     player,
     result
   );
@@ -176,6 +416,7 @@ function renderHero(match) {
       match.courtId
     );
 
+
   const meta =
     document.createElement(
       "div"
@@ -183,6 +424,7 @@ function renderHero(match) {
 
   meta.className =
     "detail-meta";
+
 
   const final =
     document.createElement(
@@ -197,6 +439,7 @@ function renderHero(match) {
     "Final"
   );
 
+
   const date =
     document.createElement(
       "span"
@@ -209,6 +452,7 @@ function renderHero(match) {
       match.archivedAt
     )
   );
+
 
   const locationText =
     document.createElement(
@@ -232,6 +476,7 @@ function renderHero(match) {
       .join(" · ")
   );
 
+
   meta.append(
     final,
     date,
@@ -247,13 +492,20 @@ function renderHero(match) {
   scoreboard.className =
     "detail-scoreboard";
 
+
   scoreboard.append(
     makeDetailPlayer(
       match.nameA,
       match.setsA,
-      match.winner === "A"
+      match.winner === "A",
+      resolveArchivedPlayerPhoto(
+        match,
+        "A"
+      ),
+      "A"
     )
   );
+
 
   const divider =
     document.createElement(
@@ -267,11 +519,17 @@ function renderHero(match) {
     divider
   );
 
+
   scoreboard.append(
     makeDetailPlayer(
       match.nameB,
       match.setsB,
-      match.winner === "B"
+      match.winner === "B",
+      resolveArchivedPlayerPhoto(
+        match,
+        "B"
+      ),
+      "B"
     )
   );
 
@@ -280,6 +538,7 @@ function renderHero(match) {
     meta,
     scoreboard
   );
+
 
   document.title =
     `${match.nameA || "Player"} vs ${match.nameB || "Player"} — VoxCourt`;
@@ -513,6 +772,7 @@ function renderTimeline(match) {
       ? match.events
       : [];
 
+
   if (!events.length) {
     const empty =
       document.createElement(
@@ -532,15 +792,124 @@ function renderTimeline(match) {
     return;
   }
 
+
+  let currentSet =
+    null;
+
+
   events.forEach(
     event => {
+
+      const setNumber =
+        vcSetNumberForEvent(
+          event
+        );
+
+
+      /*
+       * Permanent SET divider.
+       * Created ONCE during render.
+       */
+      if (
+        setNumber !==
+        currentSet
+      ) {
+        currentSet =
+          setNumber;
+
+
+        const setHeader =
+          document.createElement(
+            "section"
+          );
+
+        setHeader.className =
+          "timeline-set-header";
+
+
+        const kicker =
+          document.createElement(
+            "div"
+          );
+
+        kicker.className =
+          "timeline-set-kicker";
+
+        setText(
+          kicker,
+          `SET ${setNumber}`
+        );
+
+
+        const heading =
+          document.createElement(
+            "div"
+          );
+
+        heading.className =
+          "timeline-set-heading";
+
+        setText(
+          heading,
+          `Set ${setNumber}`
+        );
+
+
+        const description =
+          document.createElement(
+            "div"
+          );
+
+        description.className =
+          "timeline-set-description";
+
+        const enteringScore =
+          vcSetsScoreEnteringEvent(
+            event
+          );
+
+        setText(
+          description,
+          enteringScore
+            ? `Match sets entering this section: ${enteringScore}`
+            : "Point-by-point action"
+        );
+
+
+        setHeader.append(
+          kicker,
+          heading,
+          description
+        );
+
+        container.appendChild(
+          setHeader
+        );
+      }
+
+
       const row =
+        document.createElement(
+          "article"
+        );
+
+      const typeName =
+        eventType(
+          event
+        );
+
+      row.className =
+        "timeline-event " +
+        `timeline-event--${typeName.toLowerCase()}`;
+
+
+      const leading =
         document.createElement(
           "div"
         );
 
-      row.className =
-        "timeline-event";
+      leading.className =
+        "timeline-leading";
 
 
       const type =
@@ -553,7 +922,55 @@ function renderTimeline(match) {
 
       setText(
         type,
-        eventType(event)
+        typeName
+      );
+
+
+      const side =
+        vcEventSide(
+          event
+        );
+
+      if (
+        side === "A" ||
+        side === "B"
+      ) {
+        const avatar =
+          document.createElement(
+            "img"
+          );
+
+        avatar.className =
+          "timeline-player-photo";
+
+        avatar.alt =
+          side === "A"
+            ? (match.nameA || "Player A")
+            : (match.nameB || "Player B");
+
+        avatar.src =
+          resolveArchivedPlayerPhoto(
+            match,
+            side
+          );
+
+        avatar.onerror = () => {
+          avatar.onerror = null;
+
+          avatar.src =
+            side === "B"
+              ? VC_DEFAULT_PHOTO_B
+              : VC_DEFAULT_PHOTO_A;
+        };
+
+        leading.appendChild(
+          avatar
+        );
+      }
+
+
+      leading.appendChild(
+        type
       );
 
 
@@ -574,9 +991,20 @@ function renderTimeline(match) {
       title.className =
         "timeline-title";
 
+
+      const playerName =
+        side === "A"
+          ? asString(match.nameA)
+          : side === "B"
+            ? asString(match.nameB)
+            : "";
+
+
       setText(
         title,
-        eventTitle(event)
+        playerName
+          ? `${typeName} · ${playerName}`
+          : eventTitle(event)
       );
 
 
@@ -610,23 +1038,37 @@ function renderTimeline(match) {
       time.className =
         "timeline-time";
 
+
       const timestamp =
-        eventTimestamp(event);
+        eventTimestamp(
+          event
+        );
 
       setText(
         time,
         timestamp
           ? new Date(timestamp)
-              .toLocaleTimeString()
+              .toLocaleTimeString(
+                [],
+                {
+                  hour:
+                    "2-digit",
+                  minute:
+                    "2-digit",
+                  second:
+                    "2-digit"
+                }
+              )
           : ""
       );
 
 
       row.append(
-        type,
+        leading,
         main,
         time
       );
+
 
       container.appendChild(
         row
@@ -978,474 +1420,3 @@ setText(
 
 activateTabs();
 loadMatch();
-
-/* ===== VC MATCH DETAIL ENHANCEMENTS START ===== */
-(function () {
-  if (document.body?.dataset?.page !== "match") return;
-
-  const DEFAULT_A =
-    "/tennislive-match/players/default-a.jpg";
-
-  const DEFAULT_B =
-    "/tennislive-match/players/default-b.jpg";
-
-  function textOf(el) {
-    return (el?.textContent || "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function isVisible(el) {
-    if (!el) return false;
-    const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  }
-
-  function unique(list) {
-    return Array.from(new Set(list));
-  }
-
-  function looksLikeName(txt) {
-    if (!txt) return false;
-
-    const t = txt.trim();
-
-    if (t.length < 3 || t.length > 40) {
-      return false;
-    }
-
-    if (/^\d+$/.test(t)) {
-      return false;
-    }
-
-    if (
-      /^(FINAL|OVERVIEW|HIGHLIGHTS|TIMELINE|MATCH ARCHIVE|RESULT|WINNER|FORMAT|DURATION|STARTED|FINISHED|CLUB|COURT)$/i.test(
-        t
-      )
-    ) {
-      return false;
-    }
-
-    return /[A-Za-zΑ-ΩΆ-Ώα-ωά-ώ]/.test(t);
-  }
-
-  function getBigScoreCards() {
-    const all =
-      Array.from(
-        document.querySelectorAll("main *")
-      );
-
-    const scoreEls = all.filter((el) => {
-      const t = textOf(el);
-
-      if (!/^\d{1,2}$/.test(t)) {
-        return false;
-      }
-
-      const fs =
-        parseFloat(
-          getComputedStyle(el).fontSize || "0"
-        ) || 0;
-
-      return fs >= 34 || el.offsetHeight >= 40;
-    });
-
-    const cards = [];
-    const seen = new Set();
-
-    scoreEls.forEach((scoreEl) => {
-      let cur = scoreEl;
-
-      while (
-        cur &&
-        cur !== document.body
-      ) {
-        if (
-          cur.offsetWidth >= 220 &&
-          cur.offsetHeight >= 110
-        ) {
-          const r =
-            cur.getBoundingClientRect();
-
-          const key = [
-            Math.round(r.top),
-            Math.round(r.left),
-            Math.round(r.width),
-            Math.round(r.height),
-          ].join("|");
-
-          if (!seen.has(key)) {
-            seen.add(key);
-            cards.push(cur);
-          }
-
-          break;
-        }
-
-        cur = cur.parentElement;
-      }
-    });
-
-    return unique(cards)
-      .filter(isVisible)
-      .sort((a, b) => {
-        const ar =
-          a.getBoundingClientRect();
-        const br =
-          b.getBoundingClientRect();
-
-        return (
-          ar.top - br.top ||
-          ar.left - br.left
-        );
-      })
-      .slice(0, 2);
-  }
-
-  function findNameEl(card) {
-    const nodes = [
-      card,
-      ...card.querySelectorAll("*"),
-    ];
-
-    const candidates = nodes.filter((el) => {
-      const t = textOf(el);
-      return (
-        looksLikeName(t) &&
-        isVisible(el)
-      );
-    });
-
-    candidates.sort((a, b) => {
-      const af =
-        parseFloat(
-          getComputedStyle(a).fontSize || "0"
-        ) || 0;
-
-      const bf =
-        parseFloat(
-          getComputedStyle(b).fontSize || "0"
-        ) || 0;
-
-      return bf - af;
-    });
-
-    return candidates[0] || null;
-  }
-
-  function decorateScoreCards() {
-    const cards =
-      getBigScoreCards();
-
-    cards.forEach((card, idx) => {
-      if (
-        card.dataset.vcPhotoEnhanced ===
-        "1"
-      ) {
-        return;
-      }
-
-      const photoWrap =
-        document.createElement("div");
-
-      photoWrap.className =
-        "vc-detail-player-photo-wrap";
-
-      const img =
-        document.createElement("img");
-
-      img.className =
-        "vc-detail-player-photo";
-
-      img.alt =
-        idx === 0
-          ? "Player A"
-          : "Player B";
-
-      img.src =
-        idx === 0
-          ? DEFAULT_A
-          : DEFAULT_B;
-
-      img.onerror = () => {
-        img.onerror = null;
-        img.src =
-          idx === 0
-            ? DEFAULT_A
-            : DEFAULT_B;
-      };
-
-      photoWrap.appendChild(img);
-
-      card.classList.add(
-        "vc-detail-player-card"
-      );
-
-      card.prepend(photoWrap);
-
-      const nameEl =
-        findNameEl(card);
-
-      if (nameEl) {
-        nameEl.classList.add(
-          "vc-detail-player-name"
-        );
-      }
-
-      card.dataset.vcPhotoEnhanced =
-        "1";
-    });
-  }
-
-  function findTimelineRows() {
-    const nodes = Array.from(
-      document.querySelectorAll("main *")
-    );
-
-    const candidates = [];
-
-    nodes.forEach((el) => {
-      const t = textOf(el);
-
-      if (
-        !/\b(POINT|GAME|SET)\b/i.test(t)
-      ) {
-        return;
-      }
-
-      if (
-        !/Sets?\s*\d+\s*-\s*\d+/i.test(t)
-      ) {
-        return;
-      }
-
-      let cur = el;
-
-      while (
-        cur &&
-        cur !== document.body
-      ) {
-        if (
-          cur.offsetWidth >= 500 &&
-          cur.offsetHeight >= 42
-        ) {
-          candidates.push(cur);
-          break;
-        }
-
-        cur = cur.parentElement;
-      }
-    });
-
-    const rows = unique(candidates)
-      .filter(isVisible)
-      .sort((a, b) => {
-        const ar =
-          a.getBoundingClientRect();
-        const br =
-          b.getBoundingClientRect();
-
-        return (
-          ar.top - br.top ||
-          ar.left - br.left
-        );
-      });
-
-    return rows.filter(
-      (row, i) =>
-        !rows.some(
-          (other, j) =>
-            i !== j &&
-            other !== row &&
-            other.contains(row)
-        )
-    );
-  }
-
-  function getTimelineContainer(rows) {
-    const counts = new Map();
-
-    rows.forEach((row) => {
-      const parent =
-        row.parentElement;
-      if (!parent) return;
-
-      counts.set(
-        parent,
-        (counts.get(parent) || 0) + 1
-      );
-    });
-
-    let best = null;
-    let bestCount = 0;
-
-    counts.forEach((count, el) => {
-      if (count > bestCount) {
-        best = el;
-        bestCount = count;
-      }
-    });
-
-    return best;
-  }
-
-  function parseSetInfo(text) {
-    const m = text.match(
-      /Sets?\s*(\d+)\s*-\s*(\d+)/i
-    );
-
-    if (!m) return null;
-
-    const a = Number(m[1]);
-    const b = Number(m[2]);
-
-    return {
-      a,
-      b,
-      key: `${a}-${b}`,
-      setNumber: a + b + 1,
-    };
-  }
-
-  function styleTimelineRows() {
-    const rows =
-      findTimelineRows();
-
-    rows.forEach((row) => {
-      row.classList.add(
-        "vc-timeline-row"
-      );
-
-      const t =
-        textOf(row).toUpperCase();
-
-      row.classList.remove(
-        "vc-timeline-row--point",
-        "vc-timeline-row--game",
-        "vc-timeline-row--set",
-        "vc-timeline-row--first-in-set"
-      );
-
-      if (t.includes("POINT")) {
-        row.classList.add(
-          "vc-timeline-row--point"
-        );
-      }
-
-      if (t.includes("GAME")) {
-        row.classList.add(
-          "vc-timeline-row--game"
-        );
-      }
-
-      if (t.includes("SET")) {
-        row.classList.add(
-          "vc-timeline-row--set"
-        );
-      }
-    });
-  }
-
-  function insertSetSeparators() {
-    const rows =
-      findTimelineRows();
-
-    const container =
-      getTimelineContainer(rows);
-
-    if (!container) return;
-
-    container
-      .querySelectorAll(
-        ".vc-timeline-set-separator"
-      )
-      .forEach((el) => el.remove());
-
-    let lastKey = null;
-
-    rows.forEach((row) => {
-      if (!container.contains(row)) {
-        return;
-      }
-
-      const info =
-        parseSetInfo(textOf(row));
-
-      if (!info) return;
-
-      if (info.key !== lastKey) {
-        const sep =
-          document.createElement("div");
-
-        sep.className =
-          "vc-timeline-set-separator";
-
-        sep.innerHTML = `
-          <div class="vc-timeline-set-kicker">SET ${info.setNumber}</div>
-          <div class="vc-timeline-set-title">Set ${info.setNumber} timeline</div>
-          <div class="vc-timeline-set-subtitle">Running sets score: ${info.a}-${info.b}</div>
-        `;
-
-        row.before(sep);
-        row.classList.add(
-          "vc-timeline-row--first-in-set"
-        );
-
-        lastKey = info.key;
-      }
-    });
-  }
-
-  function applyEnhancements() {
-    decorateScoreCards();
-    styleTimelineRows();
-    insertSetSeparators();
-  }
-
-  let timer = null;
-
-  function scheduleEnhancements() {
-    clearTimeout(timer);
-    timer = setTimeout(
-      applyEnhancements,
-      80
-    );
-  }
-
-  window.addEventListener(
-    "load",
-    scheduleEnhancements
-  );
-
-  document.addEventListener(
-    "click",
-    () => {
-      setTimeout(
-        scheduleEnhancements,
-        120
-      );
-    },
-    true
-  );
-
-  const observer =
-    new MutationObserver(() => {
-      scheduleEnhancements();
-    });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  scheduleEnhancements();
-  setTimeout(
-    scheduleEnhancements,
-    400
-  );
-  setTimeout(
-    scheduleEnhancements,
-    1200
-  );
-})();
-/* ===== VC MATCH DETAIL ENHANCEMENTS END ===== */

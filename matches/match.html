@@ -18,7 +18,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="/matches/matches.css?v=20260830-032">
+  <link rel="stylesheet" href="/matches/matches.css?v=20260830-041">
 </head>
 
 <body data-page="match">
@@ -114,6 +114,13 @@
           class="tab-panel active"
           data-panel="overview"
         >
+
+          <header class="match-panel-head match-panel-head--overview">
+            <span>MATCH SUMMARY</span>
+            <h2>Match overview</h2>
+            <p>Final result, winner, court and match information.</p>
+          </header>
+
           <div
             id="overviewGrid"
             class="overview-grid"
@@ -125,6 +132,13 @@
           class="tab-panel"
           data-panel="highlights"
         >
+
+          <header class="match-panel-head match-panel-head--highlights">
+            <span>MATCH MEDIA</span>
+            <h2>Saved highlights</h2>
+            <p>Replay clips captured during this match.</p>
+          </header>
+
           <div
             id="highlightsGrid"
             class="highlights-grid"
@@ -136,6 +150,13 @@
           class="tab-panel"
           data-panel="timeline"
         >
+
+          <header class="match-panel-head match-panel-head--timeline">
+            <span>POINT BY POINT</span>
+            <h2>Match timeline</h2>
+            <p>Every scoring event, clearly grouped by set.</p>
+          </header>
+
           <div
             id="timelineList"
             class="timeline-list"
@@ -159,7 +180,7 @@
 
   </div>
 
-  <script src="/matches/match.js" defer></script>
+  <script src="/matches/match.js?v=20260830-041" defer></script>
 
 </body>
 </html>
