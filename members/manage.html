@@ -1,9 +1,93 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VoxCourt Club Management</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./members.css"></head><body>
-<main class="shell"><header class="topbar"><a class="brand" href="https://voxcourt.com/"><img src="https://voxcourt.com/tennislive-match/logoText.png" alt="VoxCourt"></a><div class="secure"><span></span> Club management</div></header>
-<section class="hero"><div><div class="eyebrow">VOXCOURT MEMBERS</div><h1>Manage your club.<br><span>One secure key.</span></h1><p>Update the club name, address, logo and court labels. Permanent deletion requires an exact confirmation.</p></div></section>
-<section class="card" id="loginCard"><div class="card-head"><span class="number">01</span><h2>Club management key</h2><p>Enter the VCK key created during setup.</p></div><form id="loginForm" class="form one-col"><label><span>Club key</span><input id="clubKeyInput" autocomplete="off" placeholder="VCK-..." required></label><button class="primary" type="submit">Open club <span>›</span></button></form><div class="message" id="loginMsg" hidden></div></section>
-<section class="card" id="manageCard" hidden><div class="card-head split"><div><span class="number">02</span><h2 id="clubHeading">Club</h2><p id="clubPath"></p></div><img id="currentLogo" alt="Club logo" style="max-width:120px;max-height:90px;object-fit:contain;background:#fff;border-radius:14px;padding:8px" hidden></div>
-<div class="form grid-two"><label class="wide"><span>Club name</span><input id="editName"></label><label class="wide"><span>Address</span><input id="editAddress"></label><label class="wide"><span>Replace logo</span><input id="editLogo" type="file" accept="image/png,image/jpeg,image/webp"></label></div><div class="actions"><button id="saveClub" class="primary" type="button">Save changes</button></div><div class="message" id="saveMsg" hidden></div>
-<h2 style="margin-top:32px">Courts</h2><div id="courtEditor" class="court-rows"></div><div class="message" id="courtMsg" hidden></div>
-<div style="margin-top:42px;border-top:1px solid #29414e;padding-top:26px"><div class="eyebrow" style="color:var(--danger)">DANGER ZONE</div><h2>Delete club permanently</h2><p style="color:var(--muted)">The club, its courts and uploaded club logo are removed from the VoxCourt registry immediately. Match/media purge is tracked separately until the media namespace phase is completed.</p><label><span>Type exactly <b id="deletePhrase"></b></span><input id="deleteConfirm"></label><button id="deleteClub" type="button" style="margin-top:14px;background:var(--danger);color:#220408">Delete club</button><div class="message" id="deleteMsg" hidden></div></div>
-</section><footer><span>VoxCourt Club Management</span><span><a href="./">New club setup</a></span></footer></main><script src="./manage.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VoxCourt Members — Club Management</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="./members.css">
+</head>
+<body>
+<main class="shell">
+  <header class="topbar">
+    <a class="brand" href="https://voxcourt.com/tennislive-match/">
+      <img src="https://voxcourt.com/tennislive-match/logoText.png" alt="VoxCourt">
+    </a>
+    <div class="secure"><span></span> Members · Club management</div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">VOXCOURT MEMBERS</div>
+      <h1>Manage your club.<br><span>Everything in one place.</span></h1>
+      <p>Update club information, address, logo and court settings. VoxCourt administrators can also securely open any club account for support.</p>
+    </div>
+  </section>
+
+  <section class="card" id="loginCard">
+    <div class="card-head">
+      <span class="number">01</span>
+      <h2>Club management key</h2>
+      <p>Enter the VCK key created during club setup.</p>
+    </div>
+    <form id="loginForm" class="form one-col">
+      <label><span>Club key</span><input id="clubKeyInput" autocomplete="off" placeholder="VCK-..." required></label>
+      <button class="primary" type="submit">Open club <span>›</span></button>
+    </form>
+    <div class="message" id="loginMsg" hidden></div>
+  </section>
+
+  <section class="card" id="manageCard" hidden>
+    <div id="adminModeBanner" class="admin-mode-banner" hidden>VoxCourt Master Admin session — you are managing this club with CEO-level access.</div>
+    <div id="lockedNote" class="locked-note" hidden></div>
+
+    <div class="card-head split">
+      <div>
+        <span class="number">02</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 id="clubHeading" style="margin-bottom:4px">Club</h2>
+          <span id="accountStatus" class="account-status active">Active</span>
+        </div>
+        <p id="clubPath"></p>
+      </div>
+      <img id="currentLogo" class="current-logo" alt="Club logo" hidden>
+    </div>
+
+    <div class="form grid-two">
+      <label class="wide"><span>Club name</span><input id="editName"></label>
+      <label class="wide"><span>Address</span><input id="editAddress" placeholder="Street, number, postal code"></label>
+      <label class="wide"><span>Replace logo</span><input id="editLogo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <label class="wide" id="adminStatusField" hidden>
+        <span>Account status · VoxCourt Admin only</span>
+        <select id="editStatus">
+          <option value="active">Active</option>
+          <option value="suspended">Suspended — subscription / billing lock</option>
+          <option value="disabled">Disabled</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions"><button id="saveClub" class="primary" type="button">Save changes</button></div>
+    <div class="message" id="saveMsg" hidden></div>
+
+    <h2 style="margin-top:32px">Courts</h2>
+    <div id="courtEditor" class="court-rows"></div>
+    <div class="message" id="courtMsg" hidden></div>
+
+    <div class="danger-zone">
+      <div class="eyebrow">DANGER ZONE</div>
+      <h2>Delete club account permanently</h2>
+      <p style="color:var(--muted)">Deleting the account removes the club, courts, club logo and schedules deletion of its VoxCourt score, match history, event clips, thumbnails and namespaced media from the current data stores.</p>
+      <label><span>Type exactly <b id="deletePhrase"></b></span><input id="deleteConfirm"></label>
+      <button id="deleteClub" class="danger-button" type="button">Delete club account</button>
+      <div class="message" id="deleteMsg" hidden></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>VoxCourt Members</span>
+    <span><a href="./">Activate a new club</a> · <a href="https://voxcourt.com/tennislive-match/">Back to VoxCourt</a></span>
+  </footer>
+</main>
+<script src="./manage.js"></script>
+</body>
+</html>
