@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VoxCourt Club Setup & Management</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="stylesheet" href="./members.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="https://voxcourt.com/">
+        <img src="https://voxcourt.com/tennislive-match/logoText.png" alt="VoxCourt" />
+      </a>
+      <div class="secure"><span></span> Secure club activation</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">VOXCOURT MEMBERS</div>
+        <h1>Set up your club.<br><span>Go live automatically.</span></h1>
+        <p>Use the activation code supplied by VoxCourt. Add your club and courts once; public court pages and QR pairing are created automatically.</p>
+      </div>
+      <div class="steps" aria-label="Setup steps">
+        <div class="step active" data-step-pill="1"><b>1</b><span>Activate</span></div>
+        <div class="step" data-step-pill="2"><b>2</b><span>Club</span></div>
+        <div class="step" data-step-pill="3"><b>3</b><span>Courts</span></div>
+        <div class="step" data-step-pill="4"><b>4</b><span>Ready</span></div>
+      </div>
+    </section>
+
+    <section class="card" id="step1">
+      <div class="card-head">
+        <div>
+          <span class="number">01</span>
+          <h2>Activation code</h2>
+          <p>Enter the unique code supplied with your VoxCourt license.</p>
+        </div>
+      </div>
+      <form id="activationForm" class="form one-col">
+        <label>
+          <span>Activation code</span>
+          <input id="activationCode" autocomplete="one-time-code" placeholder="VC-XXXX-XXXX-XXXX" required />
+        </label>
+        <button class="primary" type="submit">Continue <span>›</span></button>
+      </form>
+      <div class="message" id="activationMessage" hidden></div>
+    </section>
+
+    <section class="card" id="step2" hidden>
+      <div class="card-head split">
+        <div>
+          <span class="number">02</span>
+          <h2>Club details</h2>
+          <p>This information creates the club's permanent VoxCourt address.</p>
+        </div>
+        <div class="license" id="licenseBadge"></div>
+      </div>
+      <div class="form grid-two">
+        <label class="wide">
+          <span>Club name</span>
+          <input id="clubName" placeholder="e.g. Chalkida Tennis Club" required />
+        </label>
+        <label>
+          <span>Country</span>
+          <select id="countryName">
+            <option value="Greece" data-code="gr">Greece</option>
+            <option value="Cyprus" data-code="cy">Cyprus</option>
+            <option value="Italy" data-code="it">Italy</option>
+            <option value="Spain" data-code="es">Spain</option>
+            <option value="France" data-code="fr">France</option>
+            <option value="Germany" data-code="de">Germany</option>
+            <option value="Portugal" data-code="pt">Portugal</option>
+            <option value="United Kingdom" data-code="gb">United Kingdom</option>
+          </select>
+        </label>
+        <label>
+          <span>City</span>
+          <input id="cityName" placeholder="e.g. Chalkida" required />
+        </label>
+        <label class="wide">
+          <span>Address <small>optional</small></span>
+          <input id="address" placeholder="Street, number, postal code" />
+        </label>
+        <label class="wide logo-field">
+          <span>Club logo <small>optional · PNG/JPG/WEBP · max 3 MB</small></span>
+          <input id="clubLogo" type="file" accept="image/png,image/jpeg,image/webp" />
+          <div class="logo-preview" id="logoPreview" hidden><img id="logoPreviewImg" alt="Club logo preview" /></div>
+        </label>
+      </div>
+      <div class="actions">
+        <button class="secondary" type="button" id="backTo1">Back</button>
+        <button class="primary" type="button" id="toCourts">Continue to courts <span>›</span></button>
+      </div>
+    </section>
+
+    <section class="card" id="step3" hidden>
+      <div class="card-head split">
+        <div>
+          <span class="number">03</span>
+          <h2>Courts</h2>
+          <p>Choose how many courts the club has and the sport played on each one.</p>
+        </div>
+        <label class="court-count">
+          <span>Number of courts</span>
+          <select id="courtCount"></select>
+        </label>
+      </div>
+      <div id="courtRows" class="court-rows"></div>
+      <div class="message" id="createMessage" hidden></div>
+      <div class="actions">
+        <button class="secondary" type="button" id="backTo2">Back</button>
+        <button class="primary" type="button" id="createClub">Create club & courts <span>›</span></button>
+      </div>
+    </section>
+
+    <section class="card result" id="step4" hidden>
+      <div class="success-mark">✓</div>
+      <div class="eyebrow">SETUP COMPLETE</div>
+      <h2 id="resultTitle">Your club is ready.</h2>
+      <p class="result-lead">The public court routes are active. No VoxCourt staff action is required.</p>
+
+      <div class="club-key-box">
+        <div>
+          <strong>Club management key</strong>
+          <span>Save this key. It is shown only at setup completion.</span>
+        </div>
+        <code id="clubKey"></code>
+        <button id="copyClubKey" type="button">Copy key</button>
+      </div>
+
+      <div id="resultCourts" class="result-courts"></div>
+
+      <div class="final-actions">
+        <a class="primary link-button" href="https://voxcourt.com/tennislive-match/live">Open Find Courts <span>›</span></a>
+        <a class="secondary link-button" href="./manage.html">Manage this club</a>
+        <button class="secondary" type="button" id="newSetup">Set up another club</button>
+      </div>
+    </section>
+
+    <footer>
+      <span>VoxCourt Club Provisioning</span>
+      <span><a href="./manage.html">Manage existing club</a> · Activation · Courts · QR pairing</span>
+    </footer>
+  </main>
+  <script src="./members.js"></script>
+</body>
+</html>
