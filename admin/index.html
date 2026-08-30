@@ -3,22 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>VoxCourt Master Admin</title>
+  <title>VoxCourt Master Admin · Hardware Wizard V5</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" href="./admin.css">
 </head>
 <body>
 <main class="shell">
   <header><img src="https://voxcourt.com/tennislive-match/logoText.png" alt="VoxCourt"><span>MASTER ADMIN · CEO CONTROL</span></header>
-  <section class="hero"><div class="eyebrow">VOXCOURT CONTROL</div><h1>Every club.<br><span>Every kit.</span></h1><p>VoxCourt staff access only. Control club accounts and move physical VoxCourt hardware between courts with one exclusive assignment.</p></section>
+  <section class="hero"><div class="eyebrow">VOXCOURT CONTROL</div><h1>Every club.<br><span>Every device.</span></h1><p>VoxCourt staff access only. Pair Venue PCs, detect devices, build permanent court kits, replace individual hardware and move complete kits between courts.</p></section>
   <section class="card" id="login"><h2>Master admin key</h2><form id="loginForm"><input id="adminKey" type="password" autocomplete="off" placeholder="VCA-..." required><button>Open console</button></form><div id="loginMsg" class="msg" hidden></div></section>
 
   <section id="console" hidden>
-    <div class="toolbar"><div><h2>Hardware kits</h2><span id="hardwareCount"></span></div><button id="refresh">Refresh all</button></div>
+    <div class="toolbar"><div><h2>Court / Venue PCs</h2><span id="nodeCount"></span></div><button id="refresh">Refresh all</button></div>
+
+    <section class="hardware-create node-create">
+      <div class="hardware-create__title">
+        <div><strong>Register Court / Venue PC</strong><span>One central PC may detect devices for one or many courts. The PC is paired once with a short-lived code; device credentials remain local.</span></div>
+      </div>
+      <div class="hardware-create__grid node-create__grid">
+        <label><span>Node code</span><input id="newNodeCode" value="VC-NODE-001"></label>
+        <label><span>PC / Venue name</span><input id="newNodeName" value="Portable Demo / Court PC"></label>
+      </div>
+      <div class="actions"><button class="save" id="createNode">Register PC</button></div>
+      <div class="msg" id="nodeCreateMsg" hidden></div>
+    </section>
+
+    <div id="nodes" class="hardware-node-list"></div>
+
+    <div class="toolbar kit-toolbar"><div><h2>Hardware kits</h2><span id="hardwareCount"></span></div></div>
 
     <section class="hardware-create">
       <div class="hardware-create__title">
-        <div><strong>Create / register hardware kit</strong><span>For the current portable pair use VC-KIT-001. Stream keys are the permanent camera identities, not the club.</span></div>
+        <div><strong>Create / register hardware kit</strong><span>A kit is the permanent logical package for one court: Camera A/B, BOYA, Radar, LED and Replay. Devices are paired below after the Court/Venue PC reports them.</span></div>
       </div>
       <div class="hardware-create__grid">
         <label><span>Kit code</span><input id="newKitCode" value="VC-KIT-001"></label>

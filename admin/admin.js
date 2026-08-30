@@ -4,7 +4,18 @@
   let key = "";
   let clubs = [];
   let kits = [];
+  let nodes = [];
   let staticCourts = [];
+  const pairCodes = new Map();
+
+  const ROLE_LABELS = {
+    cam1: "Camera A",
+    cam2: "Camera B",
+    boya: "BOYA / Voice",
+    radar: "Radar",
+    led: "LED scoreboard",
+    replay: "Replay service",
+  };
 
   const esc = s => String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -30,13 +41,15 @@
     $("#loginMsg").hidden = !t;
   }
 
+  function fmtTime(ms) {
+    const value = Number(ms || 0);
+    if (!value) return "Never";
+    return new Date(value).toLocaleString();
+  }
+
   function allCourts() {
     const byKey = new Map();
-
-    // Static/legacy courts already visible on the normal VoxCourt site.
     for (const row of staticCourts) byKey.set(row.courtKey, row);
-
-    // Self-service portal courts override the same key with richer metadata.
     for (const club of clubs) {
       for (const court of club.courts || []) {
         byKey.set(court.courtKey, {
@@ -47,7 +60,6 @@
         });
       }
     }
-
     return [...byKey.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
 
@@ -95,18 +107,179 @@
     return options.join("");
   }
 
+  function allDevices() {
+    const list = [];
+    for (const node of nodes) {
+      for (const device of node.devices || []) {
+        list.push({ ...device, node });
+      }
+    }
+    return list;
+  }
+
+  function compatible(role, device) {
+    const kind = String(device?.kind || "").toLowerCase();
+    const hints = Array.isArray(device?.metadata?.roleHints)
+      ? device.metadata.roleHints.map(x => String(x).toLowerCase())
+      : [];
+    if (hints.includes(role)) return true;
+    if (role === "cam1" || role === "cam2") return kind === "camera";
+    if (role === "boya") return ["audio", "usb", "microphone"].includes(kind);
+    if (role === "radar") return ["serial", "usb", "radar"].includes(kind);
+    if (role === "led") return ["led", "network", "usb", "other"].includes(kind);
+    if (role === "replay") return ["service", "replay"].includes(kind);
+    return true;
+  }
+
+  function deviceOptions(role, currentDeviceId = 0) {
+    const devices = allDevices();
+    const preferred = devices.filter(d => compatible(role, d));
+    const pool = preferred.length ? preferred : devices;
+    const options = ['<option value="">— Choose detected device —</option>'];
+    for (const d of pool) {
+      const current = Number(d.id) === Number(currentDeviceId);
+      const usedElsewhere = d.assignment && !current;
+      const disabled = usedElsewhere ? " disabled" : "";
+      const selected = current ? " selected" : "";
+      const status = d.online ? "ONLINE" : "OFFLINE";
+      const stream = d.metadata?.streamKey ? ` · ${d.metadata.streamKey}` : "";
+      const assigned = usedElsewhere ? ` · USED ${d.assignment.kitCode}/${d.assignment.role}` : "";
+      options.push(
+        `<option value="${d.id}"${selected}${disabled}>${esc(d.node.nodeCode)} · ${esc(d.name)} · ${esc(status + stream + assigned)}</option>`
+      );
+    }
+    return options.join("");
+  }
+
   async function load() {
-    const [clubBody, hardwareBody] = await Promise.all([
+    const [clubBody, hardwareBody, nodeBody] = await Promise.all([
       req("/admin/clubs"),
       req("/admin/hardware/kits"),
+      req("/admin/hardware/nodes"),
       loadStaticCourts(),
     ]);
     clubs = clubBody.clubs || [];
     kits = hardwareBody.kits || [];
+    nodes = nodeBody.nodes || [];
     $("#count").textContent = `${clubs.length} clubs`;
     $("#hardwareCount").textContent = `${kits.length} kits · ${kits.filter(k => k.assignedCourt).length} assigned`;
+    $("#nodeCount").textContent = `${nodes.length} PCs · ${nodes.filter(n => n.online).length} online`;
+    renderNodes();
     renderHardware();
     renderClubs();
+  }
+
+  function renderNodes() {
+    const host = $("#nodes");
+    host.innerHTML = "";
+    if (!nodes.length) {
+      host.innerHTML = '<div class="hardware-empty">No Court / Venue PC registered yet. Create VC-NODE-001 above.</div>';
+      return;
+    }
+
+    for (const node of nodes) {
+      const el = document.createElement("article");
+      el.className = "hardware-node";
+      const liveClass = node.online ? "is-online" : "is-offline";
+      const pair = pairCodes.get(node.id);
+      const devices = node.devices || [];
+      const deviceRows = devices.length
+        ? devices.map(d => {
+            const ass = d.assignment
+              ? `<span class="device-assignment">${esc(d.assignment.kitCode)} · ${esc(ROLE_LABELS[d.assignment.role] || d.assignment.role)}</span>`
+              : '<span class="device-assignment empty">Available</span>';
+            const stream = d.metadata?.streamKey
+              ? `<span class="device-stream">${esc(d.metadata.streamKey)}</span>`
+              : "";
+            return `<div class="device-row">
+              <span class="device-state ${d.online ? "online" : "offline"}"></span>
+              <div class="device-main"><strong>${esc(d.name)}</strong><small>${esc(d.kind)} · ${esc(d.transport || "local")} · ${esc(d.deviceKey)}</small></div>
+              ${stream}${ass}
+            </div>`;
+          }).join("")
+        : '<div class="device-empty">No devices reported yet. Pair the agent and wait for the first scan.</div>';
+
+      el.innerHTML = `
+        <div class="hardware-node__top">
+          <div>
+            <div class="title-row"><h3>${esc(node.nodeCode)}</h3><span class="node-live ${liveClass}">${node.online ? "ONLINE" : node.paired ? "OFFLINE" : "NOT PAIRED"}</span></div>
+            <div class="hardware-name">${esc(node.name)}</div>
+            <div class="node-meta">${esc(node.hostname || "No hostname yet")} · Agent ${esc(node.agentVersion || "—")} · Last seen ${esc(fmtTime(node.lastSeenAt))}</div>
+          </div>
+          <div class="hardware-badges"><span class="hardware-badge">${devices.length} devices</span></div>
+        </div>
+        <div class="hardware-grid node-settings">
+          <label><span>PC / Node name</span><input data-node-name value="${esc(node.name)}"></label>
+          <label><span>Status</span><select data-node-status><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
+        </div>
+        <div class="actions">
+          <button class="open-account" data-save-node>Save node</button>
+          <button class="save" data-pair-code>${node.paired ? "ROTATE / RE-PAIR PC" : "GENERATE PAIRING CODE"}</button>
+        </div>
+        ${pair ? `<div class="pair-code-box"><span>PAIRING CODE · valid 15 min</span><strong>${esc(pair.pairingCode)}</strong><small>Run this code on the Court / Venue PC. It is one-time use.</small></div>` : ""}
+        <div class="device-list">${deviceRows}</div>
+        <div class="msg" data-node-msg hidden></div>
+      `;
+      el.querySelector("[data-node-status]").value = node.status;
+      el.querySelector("[data-save-node]").onclick = () => saveNode(node, el);
+      el.querySelector("[data-pair-code]").onclick = () => generatePairCode(node, el);
+      host.appendChild(el);
+    }
+  }
+
+  async function createNode() {
+    const m = $("#nodeCreateMsg");
+    try {
+      m.hidden = true;
+      await req("/admin/hardware/nodes", {
+        method: "POST",
+        body: JSON.stringify({
+          nodeCode: $("#newNodeCode").value.trim(),
+          name: $("#newNodeName").value.trim(),
+        }),
+      });
+      m.textContent = "Hardware PC registered. Generate a pairing code next.";
+      m.hidden = false;
+      await load();
+    } catch (e) {
+      m.textContent = e.message;
+      m.hidden = false;
+    }
+  }
+
+  async function saveNode(node, el) {
+    const m = el.querySelector("[data-node-msg]");
+    try {
+      m.hidden = true;
+      await req(`/admin/hardware/node/${node.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: el.querySelector("[data-node-name]").value.trim(),
+          status: el.querySelector("[data-node-status]").value,
+        }),
+      });
+      await load();
+    } catch (e) {
+      m.textContent = e.message;
+      m.hidden = false;
+    }
+  }
+
+  async function generatePairCode(node, el) {
+    const m = el.querySelector("[data-node-msg]");
+    if (node.paired && !confirm(`Re-pair ${node.nodeCode}? The next successful pairing will rotate its hardware token.`)) return;
+    try {
+      m.hidden = true;
+      const b = await req(`/admin/hardware/node/${node.id}/pair-code`, {
+        method: "POST",
+        body: "{}",
+      });
+      pairCodes.set(node.id, b);
+      renderNodes();
+    } catch (e) {
+      m.textContent = e.message;
+      m.hidden = false;
+    }
   }
 
   function renderHardware() {
@@ -128,6 +301,28 @@
         : "AVAILABLE / UNASSIGNED";
       const statusClass = kit.status === "active" ? "status-active" : "status-disabled";
       const caps = (kit.capabilities || []).map(v => `<span class="hardware-badge">${esc(v)}</span>`).join("");
+      const roles = kit.deviceRoles || {};
+      const roleCards = Object.keys(ROLE_LABELS).map(role => {
+        const current = roles[role] || null;
+        const d = current?.device;
+        const currentText = d
+          ? `${d.name} · ${current.node?.nodeCode || ""}`
+          : (role === "cam1" && kit.cam1StreamKey)
+            ? `Manual stream · ${kit.cam1StreamKey}`
+            : (role === "cam2" && kit.cam2StreamKey)
+              ? `Manual stream · ${kit.cam2StreamKey}`
+              : "Not paired";
+        const stateClass = current?.online ? "online" : current ? "offline" : "empty";
+        return `<div class="kit-role-card" data-role="${role}">
+          <div class="kit-role-head"><strong>${esc(ROLE_LABELS[role])}</strong><span class="role-state ${stateClass}">${current?.online ? "ONLINE" : current ? "OFFLINE" : "—"}</span></div>
+          <div class="kit-role-current">${esc(currentText)}</div>
+          <select data-device-select>${deviceOptions(role, d?.id || 0)}</select>
+          <div class="kit-role-actions">
+            <button class="save" data-pair-device>${current ? "REPLACE" : "PAIR DEVICE"}</button>
+            <button class="open-account" data-unpair-device ${current ? "" : "disabled"}>Unpair</button>
+          </div>
+        </div>`;
+      }).join("");
 
       el.innerHTML = `
         <div class="hardware-kit__top">
@@ -135,25 +330,36 @@
             <div class="title-row"><h3>${esc(kit.kitCode)}</h3><span class="status-pill ${statusClass}">${esc(kit.status)}</span></div>
             <div class="hardware-name">${esc(kit.name)}</div>
             <div class="hardware-assignment ${kit.assignedCourt ? "is-assigned" : ""}">${esc(assignment)}</div>
+            <div class="kit-readiness">Devices: ${kit.onlineDeviceCount || 0} online · ${kit.pairedDeviceCount || 0} paired</div>
           </div>
           <div class="hardware-badges">${caps}</div>
         </div>
 
-        <div class="hardware-grid">
-          <label><span>Kit name</span><input data-kit-name value="${esc(kit.name)}"></label>
-          <label><span>Camera A stream key</span><input data-cam1 value="${esc(kit.cam1StreamKey)}"></label>
-          <label><span>Camera B stream key</span><input data-cam2 value="${esc(kit.cam2StreamKey)}"></label>
-          <label><span>Status</span><select data-kit-status><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
-        </div>
+        <details class="device-wizard" open>
+          <summary>DEVICE PAIRING WIZARD</summary>
+          <div class="wizard-flow"><span>1 · Detect on PC</span><b>→</b><span>2 · Pair role</span><b>→</b><span>3 · Assign kit to court</span><b>→</b><span>4 · Lock / operate</span></div>
+          <div class="kit-role-grid">${roleCards}</div>
+          <div class="wizard-note">Camera credentials and local IPs stay on the Court / Venue PC. The cloud receives only safe identity/status metadata and stream keys.</div>
+        </details>
+
+        <details class="advanced-kit-settings">
+          <summary>Advanced kit settings</summary>
+          <div class="hardware-grid">
+            <label><span>Kit name</span><input data-kit-name value="${esc(kit.name)}"></label>
+            <label><span>Camera A stream key</span><input data-cam1 value="${esc(kit.cam1StreamKey)}"></label>
+            <label><span>Camera B stream key</span><input data-cam2 value="${esc(kit.cam2StreamKey)}"></label>
+            <label><span>Status</span><select data-kit-status><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
+          </div>
+          <div class="actions"><button class="open-account" data-save-kit>Save advanced settings</button></div>
+        </details>
 
         <div class="hardware-assign-row">
-          <label class="hardware-court-select"><span>Assign / move this kit to</span><select data-court>${courtOptions(assignedKey)}</select></label>
+          <label class="hardware-court-select"><span>Assign / move this complete kit to</span><select data-court>${courtOptions(assignedKey)}</select></label>
           <button class="save" data-assign>${kit.assignedCourt ? "MOVE KIT" : "ASSIGN KIT"}</button>
           <button class="open-account" data-unassign ${kit.assignedCourt ? "" : "disabled"}>Unassign</button>
         </div>
 
         <div class="actions hardware-actions">
-          <button class="open-account" data-save-kit>Save kit settings</button>
           ${kit.assignedCourt?.viewerUrl ? `<a class="map-link" href="${esc(kit.assignedCourt.viewerUrl)}" target="_blank" rel="noopener">Open assigned court</a>` : ""}
           <a class="map-link" href="${esc(kit.qrUrl)}" target="_blank" rel="noopener">Kit QR</a>
         </div>
@@ -164,7 +370,50 @@
       el.querySelector("[data-save-kit]").onclick = () => saveKit(kit, el);
       el.querySelector("[data-assign]").onclick = () => assignKit(kit, el);
       el.querySelector("[data-unassign]").onclick = () => unassignKit(kit, el);
+      el.querySelectorAll("[data-role]").forEach(card => {
+        const role = card.dataset.role;
+        card.querySelector("[data-pair-device]").onclick = () => pairDevice(kit, role, card, el);
+        card.querySelector("[data-unpair-device]").onclick = () => unpairDevice(kit, role, el);
+      });
       host.appendChild(el);
+    }
+  }
+
+  async function pairDevice(kit, role, card, kitEl) {
+    const m = kitEl.querySelector("[data-kit-msg]");
+    const value = Number(card.querySelector("[data-device-select]").value || 0);
+    if (!value) {
+      m.textContent = `Choose a detected device for ${ROLE_LABELS[role]}.`;
+      m.hidden = false;
+      return;
+    }
+    try {
+      m.hidden = true;
+      await req(`/admin/hardware/kit/${kit.id}/device`, {
+        method: "POST",
+        body: JSON.stringify({ role, deviceId: value }),
+      });
+      await load();
+    } catch (e) {
+      m.textContent = e.message;
+      m.hidden = false;
+    }
+  }
+
+  async function unpairDevice(kit, role, kitEl) {
+    const current = kit.deviceRoles?.[role];
+    if (!current) return;
+    if (!confirm(`Unpair ${ROLE_LABELS[role]} from ${kit.kitCode}? The kit-to-court assignment will remain unchanged.`)) return;
+    const m = kitEl.querySelector("[data-kit-msg]");
+    try {
+      m.hidden = true;
+      await req(`/admin/hardware/kit/${kit.id}/device/${role}`, {
+        method: "DELETE",
+      });
+      await load();
+    } catch (e) {
+      m.textContent = e.message;
+      m.hidden = false;
     }
   }
 
@@ -227,8 +476,12 @@
     if (kit.assignedCourt?.courtKey && kit.assignedCourt.courtKey !== target) {
       const targetRow = allCourts().find(x => x.courtKey === target);
       const ok = confirm(
-        `${kit.kitCode} is currently assigned to ${allCourts().find(x => x.courtKey === kit.assignedCourt.courtKey)?.label || `${kit.assignedCourt.clubName} / ${kit.assignedCourt.courtName}`}.\n\n` +
-        `Move it exclusively to ${targetRow?.club.name || target} / ${targetRow?.court.name || "court"}?\n\n` +
+        `${kit.kitCode} is currently assigned to ${allCourts().find(x => x.courtKey === kit.assignedCourt.courtKey)?.label || `${kit.assignedCourt.clubName} / ${kit.assignedCourt.courtName}`}.
+
+` +
+        `Move the COMPLETE KIT and all paired devices exclusively to ${targetRow?.club.name || target} / ${targetRow?.court.name || "court"}?
+
+` +
         `The old court will immediately lose this hardware assignment.`
       );
       if (!ok) return;
@@ -248,7 +501,7 @@
 
   async function unassignKit(kit, el) {
     if (!kit.assignedCourt) return;
-    if (!confirm(`Unassign ${kit.kitCode} from ${kit.assignedCourt.clubName} / ${kit.assignedCourt.courtName}?`)) return;
+    if (!confirm(`Unassign ${kit.kitCode} from ${kit.assignedCourt.clubName} / ${kit.assignedCourt.courtName}? Devices stay married to the kit.`)) return;
     const m = el.querySelector("[data-kit-msg]");
     try {
       m.hidden = true;
@@ -395,4 +648,5 @@
 
   $("#refresh").onclick = () => load();
   $("#createKit").onclick = () => createKit();
+  $("#createNode").onclick = () => createNode();
 })();
