@@ -10,9 +10,39 @@
 <body>
 <main class="shell">
   <header><img src="https://voxcourt.com/tennislive-match/logoText.png" alt="VoxCourt"><span>MASTER ADMIN · CEO CONTROL</span></header>
-  <section class="hero"><div class="eyebrow">VOXCOURT CONTROL</div><h1>Every club.<br><span>Full control.</span></h1><p>VoxCourt staff access only. Open any club account, edit every setting, suspend service for billing, re-enable it or permanently delete the account and schedule its data purge.</p></section>
+  <section class="hero"><div class="eyebrow">VOXCOURT CONTROL</div><h1>Every club.<br><span>Every kit.</span></h1><p>VoxCourt staff access only. Control club accounts and move physical VoxCourt hardware between courts with one exclusive assignment.</p></section>
   <section class="card" id="login"><h2>Master admin key</h2><form id="loginForm"><input id="adminKey" type="password" autocomplete="off" placeholder="VCA-..." required><button>Open console</button></form><div id="loginMsg" class="msg" hidden></div></section>
-  <section id="console" hidden><div class="toolbar"><div><h2>Club registry</h2><span id="count"></span></div><button id="refresh">Refresh</button></div><div id="clubs" class="clubs"></div></section>
+
+  <section id="console" hidden>
+    <div class="toolbar"><div><h2>Hardware kits</h2><span id="hardwareCount"></span></div><button id="refresh">Refresh all</button></div>
+
+    <section class="hardware-create">
+      <div class="hardware-create__title">
+        <div><strong>Create / register hardware kit</strong><span>For the current portable pair use VC-KIT-001. Stream keys are the permanent camera identities, not the club.</span></div>
+      </div>
+      <div class="hardware-create__grid">
+        <label><span>Kit code</span><input id="newKitCode" value="VC-KIT-001"></label>
+        <label><span>Name</span><input id="newKitName" value="Portable Demo Kit"></label>
+        <label><span>Camera A stream key</span><input id="newCam1" value="court1"></label>
+        <label><span>Camera B stream key</span><input id="newCam2" value="court1-cam2"></label>
+      </div>
+      <div class="hardware-capabilities" id="newCapabilities">
+        <label><input type="checkbox" value="cam1" checked> Camera A</label>
+        <label><input type="checkbox" value="cam2" checked> Camera B</label>
+        <label><input type="checkbox" value="boya"> BOYA</label>
+        <label><input type="checkbox" value="radar"> Radar</label>
+        <label><input type="checkbox" value="led"> LED</label>
+        <label><input type="checkbox" value="replay"> Replay</label>
+      </div>
+      <div class="actions"><button class="save" id="createKit">Create kit</button></div>
+      <div class="msg" id="hardwareCreateMsg" hidden></div>
+    </section>
+
+    <div id="hardware" class="hardware-list"></div>
+
+    <div class="toolbar club-toolbar"><div><h2>Club registry</h2><span id="count"></span></div></div>
+    <div id="clubs" class="clubs"></div>
+  </section>
 </main>
 <script src="./admin.js"></script>
 </body>
